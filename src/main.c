@@ -62,6 +62,7 @@
 #include "filemanager/ext.h"    /* flush_extension_file() */
 #include "filemanager/command.h"        /* cmdline */
 #include "filemanager/panel.h"  /* panalized_panel */
+#include "editor/editwidget.h"
 
 #include "vfs/plugins_init.h"
 
@@ -77,6 +78,7 @@
 #include "selcodepage.h"
 #endif /* HAVE_CHARSET */
 
+#include "slang_engine.h"
 #include "consaver/cons.saver.h"        /* cons_saver_pid */
 
 /*** global variables ****************************************************************************/
@@ -455,6 +457,15 @@ main (int argc, char *argv[])
             g_free (config_migrate_msg);
         }
     }
+
+    /* Initialize the S-Lang interpreter and load `init.sl` file. */
+    slang_init_engine ();
+
+    /*
+     * Load the plugins before the setup so that the commands that are being
+     * created in them can be bound with a key.
+     */
+    slang_plugins_init ();
 
     /* Program main loop */
     if (mc_global.midnight_shutdown)

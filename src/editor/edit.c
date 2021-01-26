@@ -42,6 +42,7 @@
 #include <sys/stat.h>
 #include <stdint.h>             /* UINTMAX_MAX */
 #include <stdlib.h>
+#include <slang.h>
 
 #include "lib/global.h"
 
@@ -65,6 +66,7 @@
 
 #include "src/setup.h"          /* option_tab_spacing */
 #include "src/keybind-defaults.h"
+#include "src/slang_engine.h"
 
 #include "edit-impl.h"
 #include "editwidget.h"
@@ -3248,7 +3250,31 @@ void
 edit_execute_cmd (WEdit * edit, long command, int char_for_insertion)
 {
     Widget *w = WIDGET (edit);
+    GSList *slang_code = NULL;
+    /* Check if the command is a S-Lang script registered command */
+    if ((slang_code = get_command_callback (command)) != NULL)
+    {
+        int ret_api, ret_api2 = -1, ret_fun = 0;
+        ret_api = SLang_execute_function (slang_code->data);
+        if (ret_api == 0)
+            message (D_ERROR, "S-Lang plugin error", "Function doesn't exist.");
 
+        else if (ret_api < 0 || -1 == (ret_api2 = SLang_pop_int (&ret_fun)))
+        {
+            /*
+             * If the function returned 1, then edit_execute_cmd() will continue, otherwise it will
+             * exit. This feature can be used to tap into build in commands and moderate/replace
+             * their execution.
+             */
+            if (SLang_get_error ())
+            {
+                SLang_restart (1);
+                SLang_set_error (0);
+            }
+        }
+        if (ret_api <= 0 || ret_api2 <= 0 || !ret_fun)
+            return;
+    }
     if (command == CK_WindowFullscreen)
     {
         edit_toggle_fullscreen (edit);

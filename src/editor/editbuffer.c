@@ -33,6 +33,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include <sys/types.h>
 
 #include "lib/global.h"
@@ -382,6 +383,127 @@ edit_buffer_get_eol (const edit_buffer_t * buf, off_t current)
         ;
 
     return current;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+/**
+ * Find first character of current word. If jump_spaces is TRUE, then any whitespace gap on the
+   left is being ignored (i.e.: jumped across for the preceding word). */
+
+gboolean
+edit_buffer_find_word_start (const edit_buffer_t * buf, gboolean jump_spaces, off_t * word_start,
+                             gsize * word_len)
+{
+    int c, spc_count = 0;
+    off_t i = 1;
+    gboolean have_ending_char = FALSE;
+
+    /* STARTUP: Initialize the output variables to a reasonable initial values. */
+    *word_start = buf->curs1;
+    *word_len = (gsize) 0;
+
+    /* Return nothing if at begin of file. */
+    if (buf->curs1 <= 0)
+        return FALSE;
+
+    /* A first peek at the first preceding char. */
+    c = edit_buffer_get_previous_byte (buf);
+    /* Return if the word is empty (i.e.: the char is a space and we're not jumping over them). */
+    if ((!jump_spaces && isspace (c)) || c == '\n')
+        return FALSE;
+
+    /* Skip any whitespace. */
+    if (jump_spaces && isspace (c))
+    {
+        spc_count++;
+        /* Jump over all whitespace on the left. Initial i++ means: a skip of the first space (move
+         * on to processing next char before it). */
+        for (i++; buf->curs1 - i >= 0; i++)
+        {
+            c = edit_buffer_get_byte (buf, buf->curs1 - i);
+            if (!isspace (c))
+            {
+                break;
+            }
+            else if (c == '\n')
+                /* Preliminary new line → return nothing. This function works in current line. */
+                return FALSE;
+            spc_count++;
+        }
+    }
+
+    /* Whitespace till the beginning of the buffer? */
+    if (isspace (c))
+        return FALSE;
+
+    /* Accept this (either initial or one found after skipping spaces) char and move on, if
+     * there are any left chars in buffer. */
+    i++;
+
+    /*
+     * Word boundary char right after optional spaces → accept only it.
+     * This means that a single word boundary char constitutes a word of length 1, either
+     * after spaces (skipped above ↑) or immediately before cursor.
+     */
+
+    if (is_break_char (c))
+        /* i variable points to the single char, skip iterating more. */
+        have_ending_char = TRUE;
+
+    /* Search start of word to be completed. */
+    for (; !have_ending_char && buf->curs1 - i >= 0; i++)
+    {
+        c = edit_buffer_get_byte (buf, buf->curs1 - i);
+
+        if (is_break_char (c))
+            /*
+             * The isdigit() condition here was too specific for this general function (it was
+             * excluding any words starting with a digit).
+             */
+            break;
+    }
+
+    /* Success – a word has been properly found and delimited. */
+    *word_start = buf->curs1 - i + 1;   /* Save start found to result variable */
+    *word_len = (gsize) i - 1 - spc_count;      /* …and word length */
+
+    return TRUE;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+/* Gets the word on the left of the cursor.
+ *
+ * @param buf The edit buffer.
+ * @param jump_spaces Should any whitespace gap be jumped over? If not, it'll cause empty result.
+ * @param initial Initial contents of the result.
+ * @param release_on_empty Should the initial g_string be released when returning NULL.
+ * @return g_string with the word or NULL if the word is empty.
+ */
+GString *
+edit_buffer_get_left_whole_word (const edit_buffer_t * buf, gboolean jump_spaces, GString * initial,
+                                 gboolean release_on_empty)
+{
+    GString *ret = initial;
+    gsize i, word_len = 0;
+    off_t word_start = 0;
+
+    /* Search start of word left of cursor. */
+    if (!edit_buffer_find_word_start (buf, jump_spaces, &word_start, &word_len))
+    {
+        if (initial && release_on_empty)
+            g_string_free (initial, TRUE);
+        return NULL;
+    }
+
+    /* ret = g_strdup_printf ("\\b%.*s[a-zA-Z_0-9]+", word_len, bufpos); */
+    if (!ret)
+        ret = g_string_sized_new (32);
+
+    for (i = 0; i < word_len; i++)
+        g_string_append_c (ret, edit_buffer_get_byte (buf, word_start + i));
+
+    return ret;
 }
 
 /* --------------------------------------------------------------------------------------------- */

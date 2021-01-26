@@ -61,6 +61,7 @@
 #include "src/filemanager/cmd.h"        /* save_setup_cmd()  */
 #include "src/learn.h"          /* learn_keys() */
 #include "src/args.h"           /* mcedit_arg_t */
+#include "src/slang_engine.h"
 
 #include "edit-impl.h"
 #include "editwidget.h"

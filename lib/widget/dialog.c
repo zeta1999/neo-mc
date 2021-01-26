@@ -313,6 +313,10 @@ frontend_dlg_run (WDialog * h)
 
         widget_update_cursor (wh);
 
+        /* Emit any postponed message boxes. */
+        if (are_postponed_messages ())
+            display_postponed_messages ();
+
         /* Clear interrupt flag */
         tty_got_interrupt ();
         d_key = tty_get_event (&event, GROUP (h)->mouse_status == MOU_REPEAT, TRUE);

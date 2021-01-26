@@ -50,7 +50,16 @@
 
 /*** file scope type declarations ****************************************************************/
 
+typedef struct postponed_msg_s
+{
+    int flags;
+    char *title;
+    char *text;
+} postponed_msg_t;
+
 /*** file scope variables ************************************************************************/
+
+static GSList *postponed_msgs = NULL;
 
 static WDialog *last_query_dlg;
 
@@ -266,6 +275,61 @@ wtools_parent_call_string (void *routine, int argc, ...)
 
 /* --------------------------------------------------------------------------------------------- */
 /*** public functions ****************************************************************************/
+/* --------------------------------------------------------------------------------------------- */
+
+/* Return truth if there are some queued postponed messages. */
+gboolean
+are_postponed_messages (void)
+{
+    return postponed_msgs != NULL;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+void
+postponed_message (int flags_, const char *title, const char *text, ...)
+{
+    va_list args;
+
+    /* Initialize a heap allocated, message container struct. */
+    postponed_msg_t *msg_heap;
+    msg_heap = g_new (postponed_msg_t, 1);
+
+    va_start (args, text);
+
+    *msg_heap = (postponed_msg_t)
+    {
+    flags_, g_strdup (title), g_strdup_vprintf (text, args)};
+
+    va_end (args);
+
+    /* Append the heap pointer to the GSList. */
+    postponed_msgs = g_slist_append (postponed_msgs, msg_heap);
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+void
+display_postponed_messages ()
+{
+    GSList *it;
+
+    for (it = postponed_msgs; it; it = it->next)
+    {
+        postponed_msg_t *msg = (postponed_msg_t *) it->data;
+
+        /* Show the dialog with the saved message body and flags. */
+        message (msg->flags, msg->title, msg->text);
+
+        /* Release the fields of the struct. */
+        g_free (msg->title);
+        g_free (msg->text);
+    }
+
+    /* Release whole list and also call g_free on each element. */
+    g_slist_free_full (g_steal_pointer (&postponed_msgs), g_free);
+}
+
 /* --------------------------------------------------------------------------------------------- */
 
 /** Used to ask questions to the user */

@@ -46,6 +46,10 @@ int edit_buffer_get_prev_utf (const edit_buffer_t * buf, off_t byte_index, int *
 long edit_buffer_count_lines (const edit_buffer_t * buf, off_t first, off_t last);
 off_t edit_buffer_get_bol (const edit_buffer_t * buf, off_t current);
 off_t edit_buffer_get_eol (const edit_buffer_t * buf, off_t current);
+gboolean edit_buffer_find_word_start (const edit_buffer_t * buf, gboolean jump_spaces,
+                                      off_t * word_start, gsize * word_len);
+GString *edit_buffer_get_left_whole_word (const edit_buffer_t * buf, gboolean jump_spaces,
+                                          GString * initial, gboolean release_on_empty);
 GString *edit_buffer_get_word_from_pos (const edit_buffer_t * buf, off_t start_pos, off_t * start,
                                         gsize * cut);
 

@@ -72,6 +72,9 @@ static const struct
     { "cedit" PATH_SEP_STR "menu",           &mc_config_str, EDIT_HOME_MENU },
     { "panels.ini",                          &mc_config_str, MC_PANELS_FILE },
 
+    /* Plugins (S-Lang scripting). */
+    { "plugin",                              &mc_config_str, MC_PLUGIN_DIR },
+
     /* User should move this file with applying some changes in file */
     { "",                                    &mc_config_str, MC_FILEBIND_FILE },
 

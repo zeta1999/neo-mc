@@ -1128,49 +1128,6 @@ pipe_mail (const edit_buffer_t * buf, char *to, char *subject, char *cc)
 }
 
 /* --------------------------------------------------------------------------------------------- */
-/** find first character of current word */
-
-static gboolean
-edit_find_word_start (const edit_buffer_t * buf, off_t * word_start, gsize * word_len)
-{
-    int c;
-    off_t i;
-
-    /* return if at begin of file */
-    if (buf->curs1 <= 0)
-        return FALSE;
-
-    c = edit_buffer_get_previous_byte (buf);
-    /* return if not at end or in word */
-    if (is_break_char (c))
-        return FALSE;
-
-    /* search start of word to be completed */
-    for (i = 1;; i++)
-    {
-        int last;
-
-        last = c;
-        c = edit_buffer_get_byte (buf, buf->curs1 - i - 1);
-
-        if (is_break_char (c))
-        {
-            /* return if word starts with digit */
-            if (isdigit (last))
-                return FALSE;
-
-            break;
-        }
-    }
-
-    /* success */
-    *word_start = buf->curs1 - i;       /* start found */
-    *word_len = (gsize) i;
-
-    return TRUE;
-}
-
-/* --------------------------------------------------------------------------------------------- */
 /**
  * Get current word under cursor
  *
@@ -3340,7 +3297,7 @@ edit_complete_word_cmd (WEdit * edit)
     GString *compl[MAX_WORD_COMPLETIONS];       /* completions */
 
     /* search start of word to be completed */
-    if (!edit_find_word_start (&edit->buffer, &word_start, &word_len))
+    if (!edit_buffer_find_word_start (&edit->buffer, FALSE, &word_start, &word_len))
         return;
 
     /* prepare match expression */
@@ -3508,7 +3465,6 @@ edit_get_match_keyword_cmd (WEdit * edit)
     gsize word_len = 0, max_len = 0;
     int num_def = 0;
     gsize i;
-    off_t word_start = 0;
     GString *match_expr;
     char *path = NULL;
     char *ptr = NULL;
@@ -3519,15 +3475,10 @@ edit_get_match_keyword_cmd (WEdit * edit)
     for (i = 0; i < MAX_DEFINITIONS; i++)
         def_hash[i].filename = NULL;
 
-    /* search start of word to be completed */
-    if (!edit_find_word_start (&edit->buffer, &word_start, &word_len))
-        return;
-
     /* prepare match expression */
-    match_expr = g_string_sized_new (word_len);
-    for (i = 0; i < word_len; i++)
-        g_string_append_c (match_expr, edit_buffer_get_byte (&edit->buffer, word_start + i));
-
+    match_expr = edit_buffer_get_left_whole_word (&edit->buffer, TRUE, NULL, FALSE);
+    if (match_expr == NULL)
+        return;
     ptr = g_get_current_dir ();
     path = g_strconcat (ptr, PATH_SEP_STR, (char *) NULL);
     g_free (ptr);
@@ -3554,7 +3505,6 @@ edit_get_match_keyword_cmd (WEdit * edit)
     g_free (path);
 
     max_len = MAX_WIDTH_DEF_DIALOG;
-    word_len = 0;
     if (num_def > 0)
         editcmd_dialog_select_definition_show (edit, match_expr->str, max_len, word_len,
                                                (etags_hash_t *) & def_hash, num_def);

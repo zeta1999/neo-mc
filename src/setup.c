@@ -784,12 +784,28 @@ load_keymap_from_section (const char *section_name, GArray * keymap, mc_config_t
             long action;
 
             action = keybind_lookup_action (*profile_keys);
+
+            /*
+             * Dynamically created commands – registered on demand. If the command doesn't exist,
+             * meaning that it isn't a compile-time, original command, then extend the internal
+             * data structures with a new command entry, assigning it an unique CK id. Such command
+             * can then be legally mapped to a key.
+             */
+            if (action <= 0)
+            {
+                int added;
+                added = keybind_add_new_action (*profile_keys, new_dynamic_command_id);
+                action = added ? new_dynamic_command_id : 0;    /* check if CK ID was assigned */
+                new_dynamic_command_id += added;        /* if yes, increment the root CK ID variable */
+            }
+
+            /* Do the binding if the command has been found (i.e.: its CK ID is known). */
             if (action > 0)
             {
                 gchar **curr_values;
 
                 for (curr_values = values; *curr_values != NULL; curr_values++)
-                    keybind_cmd_bind (keymap, *curr_values, action);
+                    keybind_cmd_bind (keymap, *curr_values, action, ORIGIN_FILE);
             }
 
             g_strfreev (values);

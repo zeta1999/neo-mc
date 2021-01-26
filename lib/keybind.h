@@ -346,6 +346,30 @@ enum
     CK_MergeOther
 };
 
+/*
+ * The values of the key binding «origin» indicator field in the global_keymap_t entry for the
+ * binding. It informs about from where the key binding comes from (the binary, a config file,
+ * a slang script / plugin).
+ */
+
+typedef enum
+{
+    /*
+     * A special, error value used when the keymap entry for the given action cannot be found,
+     * when looking up origin field by the CK action code.
+     */
+    ORIGIN_UNKNOWN = -1,
+
+    /*
+     * Assign 0, so that omision of the field in the global_keymap_t initializer will lead to this.
+     * Meaning: the `mc` binary is the origin of the keybinding.
+     */
+    ORIGIN_COMPILE_TIME = 0,
+
+    ORIGIN_FILE,                /* The binding comes from a file. */
+    ORIGIN_SLANG_SCRIPT         /* The binding comes from S-Lang script execution (e.g.: a plugin) */
+} key_origin_t;
+
 /*** structures declarations (and typedefs of structures)*****************************************/
 
 typedef struct name_keymap_t
@@ -368,15 +392,20 @@ typedef struct global_keymap_t
     long key;
     long command;
     char caption[KEYMAP_SHORTCUT_LENGTH];
+    key_origin_t origin;
 } global_keymap_t;
 
 /*** global variables defined in .c file *********************************************************/
 
+extern int new_dynamic_command_id;
+
 /*** declarations of public functions ************************************************************/
 
-void keybind_cmd_bind (GArray * keymap, const char *keybind, long action);
+int keybind_add_new_action (const char *new_command_name, int new_ck_id);
+void keybind_cmd_bind (GArray * keymap, const char *keybind, long action, key_origin_t origin);
 long keybind_lookup_action (const char *name);
 const char *keybind_lookup_actionname (long action);
+key_origin_t keybind_lookup_keymap_origin (const global_keymap_t * keymap, long action);
 const char *keybind_lookup_keymap_shortcut (const global_keymap_t * keymap, long action);
 long keybind_lookup_keymap_command (const global_keymap_t * keymap, long key);
 

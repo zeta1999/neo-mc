@@ -80,7 +80,10 @@ libinternal_la_SOURCES = \
 	setup.c setup.h \
 	textconf.c textconf.h \
 	usermenu.c usermenu.h \
-	util.c util.h
+	util.c util.h \
+	slang_engine.c slang_engine.h \
+	slang_api_functions.c \
+	slang_api_functions_glue.c
 
 if CHARSET
     libinternal_la_SOURCES += selcodepage.c selcodepage.h
