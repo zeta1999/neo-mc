@@ -1,6 +1,6 @@
-= Neo Midnight Commander =
+# ━━ ⋱Neo⋱ Midnight Commander ━━
 
-Welcome to the Neo-MC project! The goals of it are to:
+Welcome to the ⋱Neo⋱-MC project! The goals of it are to:
 
 - make the hidden gem – mcedit – shine and grow to be able to compete with Vim and Emacs,
 - add a scripting language to mcedit and mc to make this possible,
