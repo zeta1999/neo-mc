@@ -35,7 +35,9 @@ typedef lcback_ret_t (*lcback_fn) (struct WListbox * l);
 
 typedef struct WLEntry
 {
+    int index;                  /* The location in the list (used when it's filtered) */
     char *text;                 /* Text to display */
+    gboolean free_text;         /* Whether to free the text on entry's removal */
     int hotkey;
     void *data;                 /* Client information */
     gboolean free_data;         /* Whether to free the data on entry's removal */
@@ -46,6 +48,7 @@ typedef struct WListbox
     Widget widget;
     GQueue *list;               /* Pointer to the list of WLEntry */
     int pos;                    /* The current element displayed */
+    int virtual_pos;            /* The initial index of the current element, works also for filtered listbox */
     int top;                    /* The first element displayed */
     gboolean allow_duplicates;  /* Do we allow duplicates on the list? */
     gboolean scrollbar;         /* Draw a scrollbar? */
@@ -60,7 +63,11 @@ extern const global_keymap_t *listbox_map;
 
 /*** declarations of public functions ************************************************************/
 
+void listbox_init (WListbox * l, int y, int x, int height, int width, gboolean deletable,
+                   lcback_fn callback);
 WListbox *listbox_new (int y, int x, int height, int width, gboolean deletable, lcback_fn callback);
+cb_ret_t listbox_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *data);
+
 int listbox_search_text (WListbox * l, const char *text);
 int listbox_search_data (WListbox * l, const void *data);
 void listbox_select_first (WListbox * l);
@@ -74,6 +81,7 @@ void listbox_remove_current (WListbox * l);
 gboolean listbox_is_empty (const WListbox * l);
 void listbox_set_list (WListbox * l, GQueue * list);
 void listbox_remove_list (WListbox * l);
+void listbox_init_indices (WListbox * l);
 char *listbox_add_item (WListbox * l, listbox_append_t pos, int hotkey, const char *text,
                         void *data, gboolean free_data);
 

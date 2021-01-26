@@ -351,7 +351,8 @@ editcmd_dialog_completion_show (const WEdit * edit, int max_len, GString ** comp
     int start_x, start_y, offset, i;
     char *curr = NULL;
     WDialog *compl_dlg;
-    WListbox *compl_list;
+    WFilteringListbox *compl_list;
+    WListbox *lw;
     int compl_dlg_h;            /* completion dialog height */
     int compl_dlg_w;            /* completion dialog width */
 
@@ -384,20 +385,23 @@ editcmd_dialog_completion_show (const WEdit * edit, int max_len, GString ** comp
                     dialog_colors, NULL, NULL, "[Completion]", NULL);
 
     /* create the listbox */
-    compl_list = listbox_new (1, 1, compl_dlg_h - 2, compl_dlg_w - 2, FALSE, NULL);
+    compl_list = filtering_listbox_new (1, 1, compl_dlg_h - 2, compl_dlg_w - 2, FALSE, NULL,
+                                        FILT_LIST_DIALOG_AUTO_RESIZE);
+
+    /* Save WListbox pointer for convenience. */
+    lw = LISTBOX (compl_list);
 
     /* add the dialog */
     group_add_widget (GROUP (compl_dlg), compl_list);
 
     /* fill the listbox with the completions */
     for (i = num_compl - 1; i >= 0; i--)        /* reverse order */
-        listbox_add_item (compl_list, LISTBOX_APPEND_AT_END, 0, (char *) compl[i]->str, NULL,
-                          FALSE);
+        listbox_add_item (lw, LISTBOX_APPEND_AT_END, 0, (char *) compl[i]->str, NULL, FALSE);
 
     /* pop up the dialog and apply the chosen completion */
     if (dlg_run (compl_dlg) == B_ENTER)
     {
-        listbox_get_current (compl_list, &curr, NULL);
+        listbox_get_current (lw, &curr, NULL);
         curr = g_strdup (curr);
     }
 

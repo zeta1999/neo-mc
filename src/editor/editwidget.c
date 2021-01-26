@@ -303,12 +303,16 @@ edit_window_list (const WDialog * h)
     Listbox *listbox;
     GList *w;
     WEdit *selected;
+    WListbox *lw;
     int i = 0;
 
     lines = MIN ((size_t) (LINES * 2 / 3), dlg_num);
     cols = COLS * 2 / 3;
 
     listbox = create_listbox_window (lines, cols, _("Open files"), "[Open files]");
+
+    /* Convenience variable. */
+    lw = LISTBOX (listbox->list);
 
     for (w = g->widgets; w != NULL; w = g_list_next (w))
         if (edit_widget_is_editor (CONST_WIDGET (w->data)))
@@ -323,8 +327,8 @@ edit_window_list (const WDialog * h)
                     g_strdup_printf ("%c%s", e->modified ? '*' : ' ',
                                      vfs_path_as_str (e->filename_vpath));
 
-            listbox_add_item (listbox->list, LISTBOX_APPEND_AT_END, get_hotkey (i++),
-                              str_term_trim (fname, WIDGET (listbox->list)->cols - 2), e, FALSE);
+            listbox_add_item (lw, LISTBOX_APPEND_AT_END, get_hotkey (i++),
+                              str_term_trim (fname, WIDGET (lw)->cols - 2), e, FALSE);
             g_free (fname);
         }
 

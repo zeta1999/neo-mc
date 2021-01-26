@@ -42,7 +42,8 @@ typedef enum
     MSG_POST_KEY,               /* The key has been handled */
     MSG_ACTION,                 /* Send to widget to handle command */
     MSG_NOTIFY,                 /* Typically sent to dialog to inform it of state-change
-                                 * of listboxes, check- and radiobuttons. */
+                                 * of listboxes, check- and radiobuttons. Also from input
+                                 * to paired listbox when query of MultiSearch changes. */
     MSG_CURSOR,                 /* Sent to widget to position the cursor */
     MSG_IDLE,                   /* The idle state is active */
     MSG_RESIZE,                 /* Screen size has changed */
@@ -88,7 +89,9 @@ typedef enum
     WST_CONSTRUCT = (1 << 15),  /* Widget has been constructed but not run yet */
     WST_ACTIVE = (1 << 16),     /* Dialog is visible and active */
     WST_SUSPENDED = (1 << 17),  /* Dialog is suspended */
-    WST_CLOSED = (1 << 18)      /* Dialog is closed */
+    WST_CLOSED = (1 << 18),     /* Dialog is closed */
+
+    WST_FILTER = (1 << 19)      /* Listbox is filtering its contents */
 } widget_state_t;
 
 /* Flags for widget repositioning on dialog resize */
@@ -125,6 +128,8 @@ typedef cb_ret_t (*widget_cb_fn) (Widget * widget, Widget * sender, widget_msg_t
 typedef void (*widget_mouse_cb_fn) (Widget * w, mouse_msg_t msg, mouse_event_t * event);
 /* translate mouse event and process it */
 typedef int (*widget_mouse_handle_fn) (Widget * w, Gpm_Event * event);
+/* Pre unlinking (removing from a WGroup) callback. */
+typedef void (*pre_widget_unlink_cb) (Widget * w);
 
 /* Every Widget must have this as its first element */
 struct Widget
@@ -164,6 +169,12 @@ struct Widget
     /* *INDENT-OFF* */
     cb_ret_t (*set_state) (Widget * w, widget_state_t state, gboolean enable);
     /* *INDENT-ON* */
+
+    pre_widget_unlink_cb pre_unlink_func;       /* a function invoked right before removing from a WGroup by
+                                                 * group_remove_widget; it can unregister any events, which
+                                                 * is an operation that depends on the `event_group` field of
+                                                 * the group, so it cannot be done «after» widget has been
+                                                 * removed from it (i.e.: when w.owner has been set to 0) */
 
     const int *(*get_colors) (const Widget * w);
 };

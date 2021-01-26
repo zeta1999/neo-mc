@@ -83,6 +83,8 @@ extern input_colors_t input_colors;
 
 /*** declarations of public functions ************************************************************/
 
+void input_init (WInput * in, int y, int x, const int *colors, int width, const char *def_text,
+                 const char *histname, input_complete_t completion_flags);
 WInput *input_new (int y, int x, const int *colors,
                    int len, const char *text, const char *histname,
                    input_complete_t completion_flags);

@@ -1122,7 +1122,7 @@ user_menu_cmd (const WEdit * edit_widget, const char *menu_file, int selected_en
                                      extract_line (p, p + MAX_ENTRY_LEN), p, FALSE);
             }
             /* Select the default entry */
-            listbox_select_entry (listbox->list, selected);
+            listbox_select_entry (LISTBOX (listbox->list), selected);
 
             selected = run_listbox (listbox);
         }

@@ -96,6 +96,7 @@ static name_keymap_t command_names_start[] = {
     ADD_KEYMAP_NAME (SearchContinue),
     ADD_KEYMAP_NAME (Replace),
     ADD_KEYMAP_NAME (ReplaceContinue),
+    ADD_KEYMAP_NAME (MultiSearch),
     ADD_KEYMAP_NAME (Help),
     ADD_KEYMAP_NAME (Shell),
     ADD_KEYMAP_NAME (Edit),

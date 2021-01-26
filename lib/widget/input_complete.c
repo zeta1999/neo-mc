@@ -1017,8 +1017,12 @@ complete_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void
 {
     static int bl = 0;
 
-    WGroup *g = GROUP (w);
     WDialog *h = DIALOG (w);
+    WFilteringListbox *slw;
+    cb_ret_t ret = MSG_NOT_HANDLED;
+
+    /* Find the listbox in dialog's group. */
+    slw = FILT_LISTBOX (WIDGET (h)->find_by_type (WIDGET (h), filt_listbox_callback));
 
     switch (msg)
     {
@@ -1027,12 +1031,19 @@ complete_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void
         {
         case KEY_LEFT:
         case KEY_RIGHT:
+            /* MultiSearch (list filtering) is allowing for left/right movement in query input. */
+            if (widget_get_state (WIDGET (slw), WST_FILTER))
+                break;
             bl = 0;
             h->ret_value = 0;
             dlg_stop (h);
-            return MSG_HANDLED;
+            ret = MSG_HANDLED;
+            break;
 
         case KEY_BACKSPACE:
+            /* MultiSearch is exclusive with completion widening. */
+            if (widget_get_state (WIDGET (slw), WST_FILTER))
+                break;
             bl = 0;
             /* exit from completion list if input line is empty */
             if (end == 0)
@@ -1056,38 +1067,47 @@ complete_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void
 
                 new_end = str_get_prev_char (&input->buffer[end]) - input->buffer;
 
-                for (i = 0, e = listbox_get_first_link (LISTBOX (g->current->data));
+                for (i = 0, e = listbox_get_first_link (LISTBOX (slw));
                      e != NULL; i++, e = g_list_next (e))
                 {
                     WLEntry *le = LENTRY (e->data);
 
                     if (strncmp (input->buffer + start, le->text, new_end - start) == 0)
                     {
-                        listbox_select_entry (LISTBOX (g->current->data), i);
+                        listbox_select_entry (LISTBOX (slw), i);
                         end = new_end;
                         input_handle_char (input, parm);
-                        widget_draw (WIDGET (g->current->data));
+                        widget_draw (WIDGET (slw));
                         break;
                     }
                 }
             }
-            return MSG_HANDLED;
+            ret = MSG_HANDLED;
+            break;
 
         default:
             if (parm < 32 || parm > 255)
             {
                 bl = 0;
-                if (widget_lookup_key (WIDGET (input), parm) != CK_Complete)
-                    return MSG_NOT_HANDLED;
-
-                if (end == min_end)
-                    return MSG_HANDLED;
-
-                /* This means we want to refill the list box and start again */
-                h->ret_value = B_USER;
-                dlg_stop (h);
+                /* CK_Complete -> Is completion up to date? */
+                if ((widget_lookup_key (WIDGET (input), parm) == CK_Complete) && (end != min_end))
+                {
+                    /* This means we want to refill the list box and start again. */
+                    h->ret_value = B_USER;
+                    dlg_stop (h);
+                }
+                /*
+                 * else - key will be ignored by this function, so leave ret unchanged - allow other
+                 * widgets to process it.
+                 */
             }
-            else
+
+            /*
+             * Do standard live entry lookup only when not filtering list via MultiSearch – it is
+             * a feature that to a great extent replaces old engine. It can be still used as MultiSearch
+             * can be dynamically enabled and disabled (by default with: Alt-space and Ctrl-space).
+             */
+            else if (!widget_get_state (WIDGET (slw), WST_FILTER))
             {
                 static char buff[MB_LEN_MAX] = "";
                 GList *e;
@@ -1110,7 +1130,7 @@ complete_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void
                     break;
                 }
 
-                for (i = 0, e = listbox_get_first_link (LISTBOX (g->current->data));
+                for (i = 0, e = listbox_get_first_link (LISTBOX (slw));
                      e != NULL; i++, e = g_list_next (e))
                 {
                     WLEntry *le = LENTRY (e->data);
@@ -1121,7 +1141,7 @@ complete_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void
                         if (need_redraw == 0)
                         {
                             need_redraw = 1;
-                            listbox_select_entry (LISTBOX (g->current->data), i);
+                            listbox_select_entry (LISTBOX (slw), i);
                             last_text = le->text;
                         }
                         else
@@ -1172,7 +1192,7 @@ complete_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void
                 if (need_redraw == 2)
                 {
                     insert_text (input, last_text, low);
-                    widget_draw (WIDGET (g->current->data));
+                    widget_draw (WIDGET (slw));
                 }
                 else if (need_redraw == 1)
                 {
@@ -1180,13 +1200,15 @@ complete_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void
                     dlg_stop (h);
                 }
                 bl = 0;
+                ret = MSG_HANDLED;
             }
         }
-        return MSG_HANDLED;
+        break;
 
     default:
         return dlg_default_callback (w, sender, msg, parm, data);
     }
+    return ret;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1223,7 +1245,7 @@ complete_engine (WInput * in, int what_to_do)
             int start_x, start_y;
             char **p, *q;
             WDialog *complete_dlg;
-            WListbox *complete_list;
+            WFilteringListbox *complete_list;
 
             for (p = in->completions + 1; *p != NULL; count++, p++)
             {
@@ -1266,22 +1288,25 @@ complete_engine (WInput * in, int what_to_do)
             complete_dlg =
                 dlg_create (TRUE, y, x, complete_height, complete_width, WPOS_KEEP_DEFAULT, TRUE,
                             dialog_colors, complete_callback, NULL, "[Completion]", NULL);
-            complete_list = listbox_new (1, 1, h - 2, w - 2, FALSE, NULL);
+            complete_list = filtering_listbox_new (1, 1, h - 2, w - 2, FALSE, NULL,
+                                                   FILT_LIST_KEEP_DIALOG_SIZE);
             group_add_widget (GROUP (complete_dlg), complete_list);
 
             for (p = in->completions + 1; *p != NULL; p++)
-                listbox_add_item (complete_list, LISTBOX_APPEND_AT_END, 0, *p, NULL, FALSE);
+                listbox_add_item (LISTBOX (complete_list), LISTBOX_APPEND_AT_END, 0, *p, NULL,
+                                  FALSE);
 
             i = dlg_run (complete_dlg);
             q = NULL;
             if (i == B_ENTER)
             {
-                listbox_get_current (complete_list, &q, NULL);
+                listbox_get_current (LISTBOX (complete_list), &q, NULL);
                 if (q != NULL)
                     insert_text (in, q, strlen (q));
             }
             if (q != NULL || end != min_end)
                 input_complete_free (in);
+
             dlg_destroy (complete_dlg);
 
             /* B_USER if user wants to start over again */

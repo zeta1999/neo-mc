@@ -108,8 +108,9 @@ create_listbox_window_centered (int center_y, int center_x, int lines, int cols,
         dlg_create (TRUE, ypos, xpos, lines + space, cols + space, pos_flags, FALSE, listbox_colors,
                     NULL, NULL, help, title);
 
-    listbox->list = listbox_new (2, 2, lines, cols, FALSE, NULL);
-    group_add_widget (GROUP (listbox->dlg), listbox->list);
+    listbox->list =
+        filtering_listbox_new (2, 2, lines, cols, FALSE, NULL, FILT_LIST_DIALOG_AUTO_RESIZE);
+    group_add_widget (GROUP (listbox->dlg), WIDGET (listbox->list));
 
     return listbox;
 }
@@ -128,10 +129,19 @@ create_listbox_window (int lines, int cols, const char *title, const char *help)
 int
 run_listbox (Listbox * l)
 {
+    WListbox *lw = LISTBOX (l->list);
     int val = -1;
 
     if (dlg_run (l->dlg) != B_CANCEL)
-        val = l->list->pos;
+    {
+        /* Get the virtual index first, to support filtered listboxes. */
+        val = lw->virtual_pos;
+
+        /* No virtual position -> get pos. */
+        if (val == -1)
+            val = lw->pos;
+    }
+
     dlg_destroy (l->dlg);
     g_free (l);
     return val;
@@ -149,16 +159,18 @@ run_listbox (Listbox * l)
 void *
 run_listbox_with_data (Listbox * l, const void *select)
 {
+    WListbox *lw = LISTBOX (l->list);
     void *val = NULL;
 
     if (select != NULL)
-        listbox_select_entry (l->list, listbox_search_data (l->list, select));
+        listbox_select_entry (lw, listbox_search_data (lw, select));
 
     if (dlg_run (l->dlg) != B_CANCEL)
     {
         WLEntry *e;
-        e = listbox_get_nth_item (l->list, l->list->pos);
-        if (e != NULL)
+        e = listbox_get_nth_item (lw, lw->pos);
+        /* -2 means that "<no search results>" has been selected. */
+        if (e != NULL && e->index != -2)
         {
             /* The assert guards against returning a soon-to-be deallocated
              * pointer (as in listbox_add_item(..., TRUE)). */

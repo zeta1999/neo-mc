@@ -107,7 +107,7 @@ select_charset (int center_y, int center_x, int current_charset, gboolean seldis
         ? ((current_charset < 0) ? codepages->len : (size_t) current_charset)
         : ((size_t) current_charset + 1);
 
-    listbox_select_entry (listbox->list, i);
+    listbox_select_entry (LISTBOX (listbox->list), i);
 
     listbox_result = run_listbox (listbox);
 

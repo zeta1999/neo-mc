@@ -871,7 +871,8 @@ input_save_history (const gchar * event_group_name, const gchar * event_name,
     (void) event_group_name;
     (void) event_name;
 
-    if (!in->is_password && (DIALOG (WIDGET (in)->owner)->ret_value != B_CANCEL))
+    if (!in->is_password && WIDGET (in)->owner != NULL
+        && (DIALOG (WIDGET (in)->owner)->ret_value != B_CANCEL))
     {
         ev_history_load_save_t *ev = (ev_history_load_save_t *) data;
 
@@ -971,7 +972,34 @@ input_mouse_callback (Widget * w, mouse_msg_t msg, mouse_event_t * event)
 }
 
 /* --------------------------------------------------------------------------------------------- */
+/* a callback used when removing the widget from its WGroup */
+
+static void
+input_unregister_history_events_cb (Widget * wid_ptr)
+{
+    WDialog *h = DIALOG (wid_ptr->owner);
+
+    /* unsubscribe from "history_load" event */
+    mc_event_del (h->event_group, MCEVENT_HISTORY_LOAD, input_load_history, wid_ptr);
+    /* unsubscribe from "history_save" event */
+    mc_event_del (h->event_group, MCEVENT_HISTORY_SAVE, input_save_history, wid_ptr);
+}
+
+/* --------------------------------------------------------------------------------------------- */
 /*** public functions ****************************************************************************/
+/* --------------------------------------------------------------------------------------------- */
+
+WInput *
+input_new (int y, int x, const int *colors, int width, const char *def_text,
+           const char *histname, input_complete_t completion_flags)
+{
+    WInput *in;
+
+    in = g_new (WInput, 1);
+    input_init (in, y, x, colors, width, def_text, histname, completion_flags);
+    return in;
+}
+
 /* --------------------------------------------------------------------------------------------- */
 
 /** Create new instance of WInput object.
@@ -984,15 +1012,12 @@ input_mouse_callback (Widget * w, mouse_msg_t msg, mouse_event_t * event)
   * @param completion_flags     Flags for specify type of completions
   * @return                     WInput object
   */
-WInput *
-input_new (int y, int x, const int *colors, int width, const char *def_text,
-           const char *histname, input_complete_t completion_flags)
+void
+input_init (WInput * in, int y, int x, const int *colors, int width, const char *def_text,
+            const char *histname, input_complete_t completion_flags)
 {
-    WInput *in;
-    Widget *w;
+    Widget *w = WIDGET (in);
 
-    in = g_new (WInput, 1);
-    w = WIDGET (in);
     widget_init (w, y, x, 1, width, input_callback, input_mouse_callback);
     w->options |= WOP_SELECTABLE | WOP_IS_INPUT | WOP_WANT_CURSOR;
     w->keymap = input_map;
@@ -1028,10 +1053,7 @@ input_new (int y, int x, const int *colors, int width, const char *def_text,
     if ((histname != NULL) && (*histname != '\0'))
         in->history.name = g_strdup (histname);
     /* history will be loaded later */
-
     in->label = NULL;
-
-    return in;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1050,6 +1072,8 @@ input_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *d
         mc_event_add (h->event_group, MCEVENT_HISTORY_LOAD, input_load_history, w, NULL);
         /* subscribe to "history_save" event */
         mc_event_add (h->event_group, MCEVENT_HISTORY_SAVE, input_save_history, w, NULL);
+        /* unregister (via the func) above events in case of removal from dialog */
+        w->pre_unlink_func = input_unregister_history_events_cb;
         if (in->label != NULL)
             widget_set_state (WIDGET (in->label), WST_DISABLED, widget_get_state (w, WST_DISABLED));
         return MSG_HANDLED;
@@ -1063,7 +1087,7 @@ input_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *d
             return v;
         }
 
-        /* Keys we want others to handle */
+        /* Keys we want others to handle. */
         if (parm == KEY_UP || parm == KEY_DOWN || parm == ESC_CHAR
             || parm == KEY_F (10) || parm == '\n')
             return MSG_NOT_HANDLED;
@@ -1097,10 +1121,14 @@ input_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *d
         return MSG_HANDLED;
 
     case MSG_DESTROY:
-        /* unsubscribe from "history_load" event */
-        mc_event_del (h->event_group, MCEVENT_HISTORY_LOAD, input_load_history, w);
-        /* unsubscribe from "history_save" event */
-        mc_event_del (h->event_group, MCEVENT_HISTORY_SAVE, input_save_history, w);
+        /* Only, if there is an owner WGroup. */
+        if (h != NULL)
+        {
+            /* unsubscribe from "history_load" event */
+            mc_event_del (h->event_group, MCEVENT_HISTORY_LOAD, input_load_history, w);
+            /* unsubscribe from "history_save" event */
+            mc_event_del (h->event_group, MCEVENT_HISTORY_SAVE, input_save_history, w);
+        }
         input_destroy (in);
         return MSG_HANDLED;
 

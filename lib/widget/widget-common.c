@@ -338,6 +338,8 @@ widget_init (Widget * w, int y, int x, int lines, int cols,
     w->find_by_type = widget_default_find_by_type;
     w->find_by_id = widget_default_find_by_id;
 
+    w->pre_unlink_func = NULL;
+
     w->set_state = widget_default_set_state;
     w->get_colors = widget_default_get_colors;
 }
