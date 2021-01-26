@@ -63,7 +63,7 @@
 
 #include "lib/global.h"
 
-#include "lib/util.h"
+#include "lib/sub-util.h"
 #include "lib/widget.h"         /* message() */
 #include "lib/vfs/xdirentry.h"
 #include "lib/vfs/utilvfs.h"

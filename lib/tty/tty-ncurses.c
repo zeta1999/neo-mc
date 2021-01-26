@@ -51,7 +51,7 @@
 #include "color.h"              /* tty_setcolor */
 #include "color-internal.h"
 #include "key.h"
-#include "mouse.h"
+#include "tty-mouse.h"
 #include "win.h"
 
 /* include at last !!! */

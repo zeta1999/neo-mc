@@ -26,7 +26,7 @@ SUBLIB_includes = \
 SRC_mc_utils = \
 	utilunix.c utilunix.h \
 	unixcompat.h \
-	util.c util.h
+	sub-util.c sub-util.h
 
 
 libmc_la_SOURCES = \

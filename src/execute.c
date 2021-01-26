@@ -41,7 +41,7 @@
 #include "lib/tty/win.h"
 #include "lib/vfs/vfs.h"
 #include "lib/mcconfig.h"
-#include "lib/util.h"
+#include "lib/sub-util.h"
 #include "lib/strutil.h"        /* str_replace_all_substrings() */
 #include "lib/widget.h"
 

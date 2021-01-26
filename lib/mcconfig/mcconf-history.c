@@ -41,7 +41,7 @@
 
 #include "lib/fileloc.h"        /* MC_HISTORY_FILE */
 #include "lib/strutil.h"
-#include "lib/util.h"           /* list_append_unique */
+#include "lib/sub-util.h"           /* list_append_unique */
 
 #include "lib/mcconfig.h"
 

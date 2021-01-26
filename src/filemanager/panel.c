@@ -48,7 +48,7 @@
 #include "lib/unixcompat.h"
 #include "lib/search.h"
 #include "lib/timefmt.h"        /* file_date() */
-#include "lib/util.h"
+#include "lib/sub-util.h"
 #include "lib/widget.h"
 #ifdef HAVE_CHARSET
 #include "lib/charsets.h"       /* get_codepage_id () */
@@ -67,7 +67,7 @@
 
 #include "src/usermenu.h"
 
-#include "dir.h"
+#include "fman-dir.h"
 #include "boxes.h"
 #include "tree.h"
 #include "ext.h"                /* regexp_command */

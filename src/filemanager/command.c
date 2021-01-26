@@ -39,7 +39,7 @@
 #include "lib/global.h"
 #include "lib/vfs/vfs.h"        /* vfs_current_is_local() */
 #include "lib/skin.h"           /* DEFAULT_COLOR */
-#include "lib/util.h"           /* whitespace() */
+#include "lib/sub-util.h"           /* whitespace() */
 #include "lib/widget.h"
 
 #include "src/setup.h"          /* quit */

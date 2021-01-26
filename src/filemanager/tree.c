@@ -51,7 +51,7 @@
 #include "lib/vfs/vfs.h"
 #include "lib/fileloc.h"
 #include "lib/strutil.h"
-#include "lib/util.h"
+#include "lib/sub-util.h"
 #include "lib/widget.h"
 #include "lib/event.h"          /* mc_event_raise() */
 
@@ -59,7 +59,7 @@
 #include "src/keybind-defaults.h"
 #include "src/history.h"
 
-#include "dir.h"
+#include "fman-dir.h"
 #include "filemanager.h"        /* the_menubar */
 #include "file.h"               /* copy_dir_dir(), move_dir_dir(), erase_dir() */
 #include "layout.h"             /* command_prompt */

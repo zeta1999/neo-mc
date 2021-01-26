@@ -32,7 +32,7 @@
 #include "lib/fileloc.h"        /* MC_FILEPOS_FILE */
 #include "lib/mcconfig.h"       /* mc_config_get_full_path() */
 #include "lib/strutil.h"        /* str_term_width1() */
-#include "lib/util.h"           /* backup functions */
+#include "lib/sub-util.h"           /* backup functions */
 
 #include "file_history.h"
 

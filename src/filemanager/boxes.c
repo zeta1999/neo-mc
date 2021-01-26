@@ -56,14 +56,14 @@
 #include "src/vfs/smbfs/smbfs.h"
 #endif /* ENABLE_VFS_SMB */
 
-#include "lib/util.h"           /* Q_() */
+#include "lib/sub-util.h"           /* Q_() */
 #include "lib/widget.h"
 
 #include "src/setup.h"
 #include "src/history.h"        /* MC_HISTORY_ESC_TIMEOUT */
 #include "src/execute.h"        /* pause_after_run */
 #ifdef ENABLE_BACKGROUND
-#include "src/background.h"     /* task_list */
+#include "src/task-background.h"     /* task_list */
 #endif
 
 #ifdef HAVE_CHARSET
@@ -72,7 +72,7 @@
 #endif
 
 #include "command.h"            /* For cmdline */
-#include "dir.h"
+#include "fman-dir.h"
 #include "tree.h"
 #include "layout.h"             /* for get_nth_panel_name proto */
 #include "filemanager.h"

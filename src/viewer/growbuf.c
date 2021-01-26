@@ -38,7 +38,7 @@
 
 #include "lib/global.h"
 #include "lib/vfs/vfs.h"
-#include "lib/util.h"
+#include "lib/sub-util.h"
 #include "lib/widget.h"         /* D_NORMAL */
 
 #include "internal.h"

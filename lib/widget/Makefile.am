@@ -13,7 +13,7 @@ libmcwidget_la_SOURCES = \
 	group.c group.h \
 	groupbox.c groupbox.h \
 	hline.c hline.h \
-	history.c history.h \
+	history-widget.c history-widget.h \
 	input.c input.h \
 	input_complete.c \
 	forwarding_input.c forwarding_input.h \
@@ -22,7 +22,7 @@ libmcwidget_la_SOURCES = \
 	filtering_listbox.c filtering_listbox.h \
 	label.c label.h \
 	menu.c menu.h \
-	mouse.c mouse.h \
+	widget-mouse.c widget-mouse.h \
 	quick.c quick.h \
 	radio.c radio.h \
 	rect.c rect.h \

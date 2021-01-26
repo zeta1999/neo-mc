@@ -47,7 +47,7 @@
 #include "lib/skin.h"
 #include "lib/fileloc.h"        /* EDIT_HOME_DIR */
 #include "lib/strutil.h"        /* str_term_trim() */
-#include "lib/util.h"           /* mc_build_filename() */
+#include "lib/sub-util.h"           /* mc_build_filename() */
 #include "lib/widget.h"
 #include "lib/mcconfig.h"
 #include "lib/event.h"          /* mc_event_raise() */

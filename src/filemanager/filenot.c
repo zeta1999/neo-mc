@@ -41,7 +41,7 @@
 
 #include "lib/global.h"
 #include "lib/fs.h"
-#include "lib/util.h"
+#include "lib/sub-util.h"
 #include "lib/vfs/vfs.h"
 
 #include "filenot.h"

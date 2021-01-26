@@ -39,7 +39,7 @@
 
 #include "tty.h"
 #include "tty-internal.h"       /* mouse_enabled */
-#include "mouse.h"
+#include "tty-mouse.h"
 #include "key.h"                /* define sequence */
 
 /*** global variables ****************************************************************************/

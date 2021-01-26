@@ -51,7 +51,7 @@
 
 #include "lib/widget.h"         /* message() */
 #include "lib/strutil.h"        /* str_crt_conv_from() */
-#include "lib/util.h"
+#include "lib/sub-util.h"
 
 #include "vfs.h"
 #include "utilvfs.h"

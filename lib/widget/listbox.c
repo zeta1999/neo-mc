@@ -41,7 +41,7 @@
 #include "lib/tty/tty.h"
 #include "lib/skin.h"
 #include "lib/strutil.h"
-#include "lib/util.h"           /* Q_() */
+#include "lib/sub-util.h"           /* Q_() */
 #include "lib/widget.h"
 
 /*** global variables ****************************************************************************/

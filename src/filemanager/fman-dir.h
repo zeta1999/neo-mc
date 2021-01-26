@@ -8,7 +8,7 @@
 #include <sys/stat.h>
 
 #include "lib/global.h"
-#include "lib/util.h"
+#include "lib/sub-util.h"
 #include "lib/vfs/vfs.h"
 
 /*** typedefs(not structures) and defined constants **********************************************/

@@ -41,7 +41,7 @@
 #include "lib/tty/tty.h"
 #include "lib/tty/key.h"
 #include "lib/strutil.h"
-#include "lib/util.h"
+#include "lib/sub-util.h"
 #include "lib/widget.h"
 #ifdef HAVE_CHARSET
 #include "lib/charsets.h"

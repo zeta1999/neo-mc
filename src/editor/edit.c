@@ -53,7 +53,7 @@
 #include "lib/fileloc.h"        /* EDIT_HOME_BLOCK_FILE */
 #include "lib/vfs/vfs.h"
 #include "lib/strutil.h"        /* utf string functions */
-#include "lib/util.h"           /* load_file_position(), save_file_position() */
+#include "lib/sub-util.h"           /* load_file_position(), save_file_position() */
 #include "lib/timefmt.h"        /* time formatting */
 #include "lib/lock.h"
 #include "lib/widget.h"

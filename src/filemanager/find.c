@@ -47,12 +47,12 @@
 #include "lib/vfs/vfs.h"
 #include "lib/strutil.h"
 #include "lib/widget.h"
-#include "lib/util.h"           /* canonicalize_pathname() */
+#include "lib/sub-util.h"           /* canonicalize_pathname() */
 
 #include "src/setup.h"          /* verbose */
 #include "src/history.h"        /* MC_HISTORY_SHARED_SEARCH */
 
-#include "dir.h"
+#include "fman-dir.h"
 #include "cmd.h"                /* find_cmd(), view_file_at_line() */
 #include "boxes.h"
 #include "panelize.h"

@@ -33,7 +33,7 @@
 #include "lib/global.h"
 #include "lib/fileloc.h"
 #include "lib/mcconfig.h"
-#include "lib/util.h"
+#include "lib/sub-util.h"
 #include "lib/event.h"
 
 #include "lib/vfs/vfs.h"

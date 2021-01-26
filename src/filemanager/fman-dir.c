@@ -41,13 +41,13 @@
 #include "lib/vfs/vfs.h"
 #include "lib/fs.h"
 #include "lib/strutil.h"
-#include "lib/util.h"
+#include "lib/sub-util.h"
 
 #include "src/setup.h"          /* panels_options */
 
 #include "treestore.h"
 #include "file.h"               /* file_is_symlink_to_dir() */
-#include "dir.h"
+#include "fman-dir.h"
 
 /*** global variables ****************************************************************************/
 

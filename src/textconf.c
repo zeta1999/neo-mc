@@ -33,7 +33,7 @@
 #include "lib/global.h"
 #include "lib/fileloc.h"
 #include "lib/mcconfig.h"
-#include "lib/util.h"           /* mc_get_profile_root() */
+#include "lib/sub-util.h"           /* mc_get_profile_root() */
 #include "lib/tty/tty.h"        /* S-Lang or ncurses version */
 
 #include "src/textconf.h"

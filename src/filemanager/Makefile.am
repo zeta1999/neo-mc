@@ -9,7 +9,7 @@ libmcfilemanager_la_SOURCES = \
 	chown.c \
 	cmd.c cmd.h \
 	command.c command.h \
-	dir.c dir.h \
+	fman-dir.c fman-dir.h \
 	ext.c ext.h \
 	file.c file.h \
 	filegui.c filegui.h \

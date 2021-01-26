@@ -50,7 +50,7 @@
 #include "lib/fileloc.h"
 #include "lib/vfs/vfs.h"
 #include "lib/strutil.h"
-#include "lib/util.h"
+#include "lib/sub-util.h"
 
 /*** global variables ****************************************************************************/
 

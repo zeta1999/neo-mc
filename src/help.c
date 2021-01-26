@@ -61,7 +61,7 @@
 #include "lib/skin.h"
 #include "lib/strutil.h"
 #include "lib/fileloc.h"
-#include "lib/util.h"
+#include "lib/sub-util.h"
 #include "lib/widget.h"
 #include "lib/event-types.h"
 

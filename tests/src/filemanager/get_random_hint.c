@@ -29,7 +29,7 @@
 #include "tests/mctest.h"
 
 #include "lib/strutil.h"
-#include "lib/util.h"
+#include "lib/sub-util.h"
 
 #include "src/filemanager/filemanager.h"
 

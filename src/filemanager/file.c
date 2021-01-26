@@ -66,17 +66,17 @@
 #include "lib/search.h"
 #include "lib/strescape.h"
 #include "lib/strutil.h"
-#include "lib/util.h"
+#include "lib/sub-util.h"
 #include "lib/vfs/vfs.h"
 #include "lib/widget.h"
 
 #include "src/setup.h"
 #ifdef ENABLE_BACKGROUND
-#include "src/background.h"     /* do_background() */
+#include "src/task-background.h"     /* do_background() */
 #endif
 
 /* Needed for other_panel and WTree */
-#include "dir.h"
+#include "fman-dir.h"
 #include "filegui.h"
 #include "filenot.h"
 #include "tree.h"

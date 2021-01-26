@@ -52,7 +52,7 @@
 
 #include "filemanager/fileopctx.h"      /* file_op_context_t */
 
-#include "background.h"
+#include "task-background.h"
 
 /*** global variables ****************************************************************************/
 

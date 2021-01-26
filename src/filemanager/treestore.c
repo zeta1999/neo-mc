@@ -56,7 +56,7 @@
 #include "lib/fileloc.h"
 #include "lib/strescape.h"
 #include "lib/hook.h"
-#include "lib/util.h"
+#include "lib/sub-util.h"
 
 #include "src/setup.h"          /* setup_init() */
 

@@ -39,7 +39,7 @@
 #include "lib/mcconfig.h"       /* num_history_items_recorded */
 #include "lib/fileloc.h"
 #include "lib/timefmt.h"
-#include "lib/util.h"
+#include "lib/sub-util.h"
 #include "lib/widget.h"
 
 #ifdef ENABLE_VFS_FTP
@@ -53,7 +53,7 @@
 #include "lib/charsets.h"
 #endif
 
-#include "filemanager/dir.h"
+#include "filemanager/fman-dir.h"
 #include "filemanager/filemanager.h"
 #include "filemanager/tree.h"   /* xtree_mode */
 #include "filemanager/hotlist.h"        /* load/save/done hotlist */

@@ -38,7 +38,7 @@
 #include <ctype.h>
 
 #include "lib/global.h"
-#include "lib/util.h"           /* canonicalize_pathname() */
+#include "lib/sub-util.h"           /* canonicalize_pathname() */
 #include "lib/fileloc.h"
 #include "lib/strutil.h"
 

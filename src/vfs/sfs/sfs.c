@@ -45,7 +45,7 @@
 #include <string.h>
 
 #include "lib/global.h"
-#include "lib/util.h"
+#include "lib/sub-util.h"
 #include "lib/widget.h"         /* D_ERROR, D_NORMAL */
 
 #include "src/execute.h"        /* EXECUTE_AS_SHELL */

@@ -103,7 +103,7 @@
 #include "lib/vfs/vfs.h"
 #include "lib/strutil.h"
 #include "lib/mcconfig.h"
-#include "lib/util.h"
+#include "lib/sub-util.h"
 #include "lib/widget.h"
 
 #include "src/filemanager/layout.h"     /* setup_cmdline() */

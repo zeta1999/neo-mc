@@ -1,4 +1,4 @@
-/** \file lib/util.h
+/** \file lib/sub-util.h
  *  \brief Header: various utilities
  */
 

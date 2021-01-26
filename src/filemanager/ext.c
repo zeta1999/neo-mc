@@ -43,7 +43,7 @@
 #include "lib/search.h"
 #include "lib/fileloc.h"
 #include "lib/mcconfig.h"
-#include "lib/util.h"
+#include "lib/sub-util.h"
 #include "lib/vfs/vfs.h"
 #include "lib/widget.h"
 #ifdef HAVE_CHARSET

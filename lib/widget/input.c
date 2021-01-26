@@ -45,7 +45,7 @@
 #include "lib/fileloc.h"
 #include "lib/skin.h"
 #include "lib/strutil.h"
-#include "lib/util.h"
+#include "lib/sub-util.h"
 #include "lib/widget.h"
 #include "lib/event.h"          /* mc_event_raise() */
 #include "lib/mcconfig.h"       /* mc_config_history_*() */
