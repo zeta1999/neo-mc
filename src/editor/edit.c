@@ -3862,8 +3862,23 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion)
         else
             edit_complete_word_cmd (edit);
         break;
+    case CK_SelectFunction:
+        edit_select_object_from_tags(edit, TAG_JUMP_KIND_FUNCTION_LIST);
+        break;
+    case CK_SelectVariable:
+        edit_select_object_from_tags(edit, TAG_JUMP_KIND_VAR_LIST);
+        break;
+    case CK_SelectType:
+        edit_select_object_from_tags(edit, TAG_JUMP_KIND_TYPE_LIST);
+        break;
+    case CK_SelectOther:
+        edit_select_object_from_tags(edit, TAG_JUMP_KIND_OTHER_LIST);
+        break;
+    case CK_SelectAllKinds:
+        edit_select_object_from_tags(edit, TAG_JUMP_KIND_ANY_LIST);
+        break;
     case CK_Find:
-        edit_get_match_keyword_cmd (edit);
+        edit_select_object_from_tags(edit, TAG_JUMP_KIND_MATCH_WORD);
         break;
 
 #ifdef HAVE_ASPELL

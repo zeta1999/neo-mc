@@ -408,105 +408,81 @@ editcmd_dialog_completion_show (const WEdit * edit, int max_len, GString ** comp
 }
 
 /* --------------------------------------------------------------------------------------------- */
-/* let the user select where function definition */
+/* function and data structure selection dialog */
 
-void
-editcmd_dialog_select_definition_show (WEdit * edit, char *match_expr, int max_len, int word_len,
-                                       etags_hash_t * def_hash, int num_lines)
+etags_hash_t *
+editcmd_dialog_select_tags_object_show (WEdit * edit, char *match_expr, int max_len,
+                                       etags_hash_t * all_found, etags_jump_type_t type,
+                                       int num_lines)
 {
-    int start_x, start_y, offset, i;
+    int start_x, start_y, offset, i, selected_on_start = 0;
+    gboolean found_current = FALSE;
     char *curr = NULL;
-    WDialog *def_dlg;
-    WListbox *def_list;
-    int def_dlg_h;              /* dialog height */
-    int def_dlg_w;              /* dialog width */
+    WDialog *func_dlg;
+    WListbox *func_list;
+    int func_dlg_h;              /* dialog height */
+    int func_dlg_w;              /* dialog width */
+    etags_hash_t *selection_data = NULL;
 
-    (void) word_len;
     /* calculate the dialog metrics */
-    def_dlg_h = num_lines + 2;
-    def_dlg_w = max_len + 4;
-    start_x = edit->curs_col + edit->start_col - (def_dlg_w / 2) +
+    func_dlg_h = num_lines + 2;
+    func_dlg_w = max_len >= MAX_WIDTH_DEF_DIALOG/2 ? max_len + 4 : MAX_WIDTH_DEF_DIALOG/2 + 4;
+    start_x = edit->curs_col + edit->start_col - (func_dlg_w / 2) +
         EDIT_TEXT_HORIZONTAL_OFFSET + (edit->fullscreen ? 0 : 1) + option_line_state_width;
     start_y = edit->curs_row + EDIT_TEXT_VERTICAL_OFFSET + (edit->fullscreen ? 0 : 1) + 1;
 
     if (start_x < 0)
         start_x = 0;
-    if (def_dlg_w > COLS)
-        def_dlg_w = COLS;
-    if (def_dlg_h > LINES - 2)
-        def_dlg_h = LINES - 2;
+    if (func_dlg_w > COLS)
+        func_dlg_w = COLS;
+    if (func_dlg_h > LINES - 2)
+        func_dlg_h = LINES - 2;
 
-    offset = start_x + def_dlg_w - COLS;
+    offset = start_x + func_dlg_w - COLS;
     if (offset > 0)
         start_x -= offset;
-    offset = start_y + def_dlg_h - LINES;
+    offset = start_y + func_dlg_h - LINES;
     if (offset > 0)
         start_y -= (offset + 1);
 
-    def_dlg = dlg_create (TRUE, start_y, start_x, def_dlg_h, def_dlg_w, WPOS_KEEP_DEFAULT, TRUE,
+    func_dlg = dlg_create (TRUE, start_y, start_x, func_dlg_h, func_dlg_w, WPOS_KEEP_DEFAULT, TRUE,
                           dialog_colors, NULL, NULL, "[Definitions]", match_expr);
-    def_list = listbox_new (1, 1, def_dlg_h - 2, def_dlg_w - 2, FALSE, NULL);
-    group_add_widget (GROUP (def_dlg), def_list);
+    func_list = listbox_new (1, 1, func_dlg_h - 2, func_dlg_w - 2, FALSE, NULL);
+    group_add_widget (GROUP (func_dlg), func_list);
 
     /* fill the listbox with the completions */
     for (i = 0; i < num_lines; i++)
     {
-        char *label_def;
+        char *label = NULL;
 
-        label_def =
-            g_strdup_printf ("%s -> %s:%ld", def_hash[i].short_define, def_hash[i].filename,
-                             def_hash[i].line);
-        listbox_add_item (def_list, LISTBOX_APPEND_AT_END, 0, label_def, &def_hash[i], FALSE);
-        g_free (label_def);
+        if (type >= TAG_JUMP_KIND_FUNCTION_LIST && type <= TAG_JUMP_KIND_ANY_LIST)
+            label = all_found[i].short_define;
+        else if (type == TAG_JUMP_KIND_MATCH_WORD)
+            label =
+                g_strdup_printf ("%s -> %s:%ld", all_found[i].short_define, all_found[i].filename,
+                             all_found[i].line);
+        else
+            label = g_strdup("error");
+        listbox_add_item (func_list, LISTBOX_APPEND_AT_END, 0, label, &all_found[i], FALSE);
+        g_free (label);
+
+        /* Detect currently active code segment. */
+        if ((all_found[i].line - 1) <= edit->buffer.curs_line) {
+            found_current = TRUE;
+            selected_on_start = i;
+        }
     }
+    if (found_current)
+        listbox_select_entry(func_list, selected_on_start);
 
     /* pop up the dialog and apply the chosen completion */
-    if (dlg_run (def_dlg) == B_ENTER)
-    {
-        etags_hash_t *curr_def = NULL;
-        gboolean do_moveto = FALSE;
-
-        listbox_get_current (def_list, &curr, (void **) &curr_def);
-
-        if (!edit->modified)
-            do_moveto = TRUE;
-        else if (!edit_query_dialog2
-                 (_("Warning"),
-                  _("Current text was modified without a file save.\n"
-                    "Continue discards these changes."), _("C&ontinue"), _("&Cancel")))
-        {
-            edit->force |= REDRAW_COMPLETELY;
-            do_moveto = TRUE;
-        }
-
-        if (curr != NULL && do_moveto && edit_stack_iterator + 1 < MAX_HISTORY_MOVETO)
-        {
-            vfs_path_free (edit_history_moveto[edit_stack_iterator].filename_vpath);
-
-            if (edit->dir_vpath != NULL)
-                edit_history_moveto[edit_stack_iterator].filename_vpath =
-                    vfs_path_append_vpath_new (edit->dir_vpath, edit->filename_vpath, NULL);
-            else
-                edit_history_moveto[edit_stack_iterator].filename_vpath =
-                    vfs_path_clone (edit->filename_vpath);
-
-            edit_history_moveto[edit_stack_iterator].line = edit->start_line + edit->curs_row + 1;
-            edit_stack_iterator++;
-            vfs_path_free (edit_history_moveto[edit_stack_iterator].filename_vpath);
-            edit_history_moveto[edit_stack_iterator].filename_vpath =
-                vfs_path_from_str ((char *) curr_def->fullpath);
-            edit_history_moveto[edit_stack_iterator].line = curr_def->line;
-            edit_reload_line (edit, edit_history_moveto[edit_stack_iterator].filename_vpath,
-                              edit_history_moveto[edit_stack_iterator].line);
-        }
-    }
-
-    /* clear definition hash */
-    for (i = 0; i < MAX_DEFINITIONS; i++)
-        g_free (def_hash[i].filename);
+    if (dlg_run (func_dlg) == B_ENTER)
+        listbox_get_current (func_list, &curr, (void **) &selection_data);
 
     /* destroy dialog before return */
-    dlg_destroy (def_dlg);
+    dlg_destroy (func_dlg);
+
+    return selection_data;
 }
 
 /* --------------------------------------------------------------------------------------------- */
