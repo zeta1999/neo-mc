@@ -55,6 +55,7 @@ enum
     CK_PageDown,
     CK_HalfPageUp,
     CK_HalfPageDown,
+    CK_CenterView,
     CK_Top,
     CK_Bottom,
     CK_TopOnScreen,

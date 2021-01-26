@@ -275,6 +275,7 @@ End = end; ctrl-e
 Tab = tab; shift-tab; ctrl-tab; ctrl-shift-tab
 Undo = ctrl-u
 # Redo =
+CenterView = alt-c
 Top = ctrl-home; alt-lt
 Bottom = ctrl-end; alt-gt
 ScrollUp = ctrl-up

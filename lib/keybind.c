@@ -66,6 +66,7 @@ static name_keymap_t command_names_start[] = {
     ADD_KEYMAP_NAME (PageDown),
     ADD_KEYMAP_NAME (HalfPageUp),
     ADD_KEYMAP_NAME (HalfPageDown),
+    ADD_KEYMAP_NAME (CenterView),
     ADD_KEYMAP_NAME (Top),
     ADD_KEYMAP_NAME (Bottom),
     ADD_KEYMAP_NAME (TopOnScreen),

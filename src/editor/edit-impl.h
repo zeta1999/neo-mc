@@ -234,6 +234,7 @@ void edit_save_size (WEdit * edit);
 gboolean edit_handle_move_resize (WEdit * edit, long command);
 void edit_toggle_fullscreen (WEdit * edit);
 void edit_move_to_line (WEdit * e, long line);
+void edit_center_display (WEdit * e, long diff);
 void edit_move_display (WEdit * e, long line);
 void edit_word_wrap (WEdit * edit);
 int edit_sort_cmd (WEdit * edit);

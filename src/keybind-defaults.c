@@ -420,6 +420,7 @@ static const global_keymap_ini_t default_editor_keymap[] = {
     {"Goto", "alt-l; alt-shift-l"},
     {"Refresh", "ctrl-l"},
     {"Shell", "ctrl-o"},
+    {"CenterView", "alt-c"},
     {"Top", "ctrl-home; ctrl-pgup; alt-lt"},
     {"Bottom", "ctrl-end; ctrl-pgdn; alt-gt"},
     {"TopOnScreen", "ctrl-pgup"},
