@@ -29,6 +29,7 @@
 #include <langinfo.h>
 #include <string.h>
 #include <errno.h>
+#include <ctype.h>
 
 #include "lib/global.h"
 #include "lib/util.h"           /* MC_PTR_FREE */
@@ -1018,6 +1019,37 @@ parse_integer (const char *str, gboolean * invalid)
     }
 
     return n;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+char *str_collapse_whitespace(char *s, char overwrite_char)
+{
+    int i, wi=0, size, span=0;
+    size=strlen(s);
+
+    /* Skip leading whitespace. */
+    for (i=0; i<size; i++) {
+        if (!isspace(s[i]))
+            break;
+    }
+
+    /* Collapse remaining whitespace. */
+    for (; i<size; i++) {
+        if (isspace(s[i])) // == ' ')
+            span=1;
+        else {
+            if(span)
+                s[wi++] = overwrite_char;
+
+            s[wi++] = s[i];
+            span = 0;
+        }
+    }
+
+    s[wi]='\0';
+
+    return s;
 }
 
 /* --------------------------------------------------------------------------------------------- */

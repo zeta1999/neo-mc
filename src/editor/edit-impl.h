@@ -18,6 +18,7 @@
 #include "lib/vfs/vfs.h"        /* vfs_path_t */
 
 #include "edit.h"
+#include "etags.h"
 
 /*** typedefs(not structures) and defined constants **********************************************/
 
@@ -202,7 +203,7 @@ mc_search_cbret_t edit_search_cmd_callback (const void *user_data, gsize char_of
 mc_search_cbret_t edit_search_update_callback (const void *user_data, gsize char_offset);
 
 void edit_complete_word_cmd (WEdit * edit);
-void edit_get_match_keyword_cmd (WEdit * edit);
+void edit_select_object_from_tags(WEdit * edit, etags_jump_type_t type);
 
 #ifdef HAVE_ASPELL
 int edit_suggest_current_word (WEdit * edit);

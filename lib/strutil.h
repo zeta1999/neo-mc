@@ -582,6 +582,8 @@ strtol_error_t xstrtoumax (const char *s, char **ptr, int base, uintmax_t * val,
                            const char *valid_suffixes);
 uintmax_t parse_integer (const char *str, gboolean * invalid);
 
+char *str_collapse_whitespace(char *s, char overwrite_char);
+
 /* --------------------------------------------------------------------------------------------- */
 /*** inline functions ****************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
