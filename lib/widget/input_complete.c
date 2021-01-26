@@ -843,31 +843,36 @@ try_complete_commands_prepare (try_complete_automation_state_t * state, char *te
         ti = text;
     else
     {
-        ti = str_get_prev_char (&text[*lc_start]);
+        ti = str_get_prev_char (&text[*lc_start], text);
         while (ti > text && whitespace (ti[0]))
-            str_prev_char (&ti);
+            str_prev_char (&ti, text);
     }
 
-    if (ti == text)
-        state->in_command_position++;
-    else if (strchr (command_separator_chars, ti[0]) != NULL)
+    if (!ti)
     {
         state->in_command_position++;
-        if (ti != text)
-        {
-            int this_char, prev_char;
+        ti = text;
+    }
 
-            /* Handle the two character tokens '>&', '<&', and '>|'.
-               We are not in a command position after one of these. */
-            this_char = ti[0];
-            prev_char = str_get_prev_char (ti)[0];
+    /* Is there any more preceding text, and there's a command separator? */
+    if (ti != text && strchr (command_separator_chars, ti[0]) != NULL)
+    {
+        int this_char, prev_char = '\0';
+        char *prev_char_p;
 
-            /* Quoted */
-            if ((this_char == '&' && (prev_char == '<' || prev_char == '>'))
-                || (this_char == '|' && prev_char == '>') || (ti != text
-                                                              && str_get_prev_char (ti)[0] == '\\'))
-                state->in_command_position = 0;
-        }
+        /* Initial assumption that we're at command. */
+        state->in_command_position++;
+
+        /* Handle the two character tokens '>&', '<&', and '>|'.
+           We are not in a command position after one of these. */
+        this_char = ti[0];
+        prev_char_p = str_get_prev_char (ti, text);
+        if (prev_char_p)
+            prev_char = prev_char_p[0];
+
+        if ((this_char == '&' && (strchr ("<>", prev_char)))
+            || (this_char == '|' && prev_char == '>') || prev_char == '\\')
+            state->in_command_position = 0;
     }
 }
 
@@ -1043,7 +1048,9 @@ complete_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void
             /* Refill the list box and start again */
             else if (end == min_end)
             {
-                end = str_get_prev_char (&input->buffer[end]) - input->buffer;
+                end = str_get_prev_char (&input->buffer[end], input->buffer) - input->buffer;
+                if (end < 0)
+                    end = 0;
                 input_handle_char (input, parm);
                 h->ret_value = B_USER;
                 dlg_stop (h);
@@ -1054,7 +1061,10 @@ complete_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void
                 int i;
                 GList *e;
 
-                new_end = str_get_prev_char (&input->buffer[end]) - input->buffer;
+                new_end = str_get_prev_char (&input->buffer[end], input->buffer) - input->buffer;
+                /* The buffer is empty (no previous char available)? */
+                if (new_end < 0)
+                    new_end = 0;
 
                 for (i = 0, e = listbox_get_first_link (LISTBOX (g->current->data));
                      e != NULL; i++, e = g_list_next (e))
@@ -1401,6 +1411,7 @@ complete_engine_fill_completions (WInput * in)
 {
     char *s;
     const char *word_separators;
+    gboolean separator_found = FALSE;
 
     word_separators = (in->completion_flags & INPUT_COMPLETE_SHELL_ESC) ? " \t;|<>" : "\t;|<>";
 
@@ -1416,16 +1427,26 @@ complete_engine_fill_completions (WInput * in)
             str_next_char (&s);
     }
 
-    for (; s >= in->buffer; str_prev_char (&s))
+    for (; s; str_prev_char (&s, in->buffer))
     {
         start = s - in->buffer;
         if (strchr (word_separators, *s) != NULL && !strutils_is_char_escaped (in->buffer, s))
+        {
+            separator_found = TRUE;
             break;
+        }
     }
+
+    /* Note: str_prev_char() returns NULL if no preceding character fitting within string found. */
+    if (s < in->buffer)
+        s = in->buffer;
 
     if (start < end)
     {
-        str_next_char (&s);
+        if (separator_found)
+            str_next_char (&s);
+        if (s > in->buffer + end)
+            s = in->buffer + end;
         start = s - in->buffer;
     }
 

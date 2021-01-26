@@ -133,7 +133,7 @@ check_patterns (char *p)
    point after argument. */
 
 static char *
-extract_arg (char *p, char *arg, int size)
+extract_arg (char *p, char *arg, const char *begin, int size)
 {
     while (*p != '\0' && whiteness (*p))
         p++;
@@ -152,8 +152,10 @@ extract_arg (char *p, char *arg, int size)
         p = np;
     }
     *arg = '\0';
-    if (*p == '\0' || *p == '\n')
-        str_prev_char (&p);
+    if (p && (*p == '\0' || *p == '\n'))
+        str_prev_char (&p, begin);
+    if (!p)
+        p = (char *) begin;
     return p;
 }
 
@@ -215,13 +217,13 @@ test_type (WPanel * panel, char *arg)
    p. Returns the point after condition. */
 
 static char *
-test_condition (const WEdit * edit_widget, char *p, gboolean * condition)
+test_condition (const WEdit * edit_widget, char *p, const char *begin, gboolean * condition)
 {
     char arg[256];
     const mc_search_type_t search_type = easy_patterns ? MC_SEARCH_T_GLOB : MC_SEARCH_T_REGEX;
 
     /* Handle one condition */
-    for (; *p != '\n' && *p != '&' && *p != '|'; p++)
+    for (; p && *p != '\n' && *p != '&' && *p != '|'; p++)
     {
         WPanel *panel = NULL;
 
@@ -238,12 +240,12 @@ test_condition (const WEdit * edit_widget, char *p, gboolean * condition)
         switch (*p++)
         {
         case '!':
-            p = test_condition (edit_widget, p, condition);
+            p = test_condition (edit_widget, p, begin, condition);
             *condition = !*condition;
-            str_prev_char (&p);
+            str_prev_char (&p, begin);
             break;
         case 'f':              /* file name pattern */
-            p = extract_arg (p, arg, sizeof (arg));
+            p = extract_arg (p, arg, begin, sizeof (arg));
 #ifdef USE_INTERNAL_EDIT
             if (edit_widget != NULL)
             {
@@ -267,27 +269,27 @@ test_condition (const WEdit * edit_widget, char *p, gboolean * condition)
                 syntax_type = edit_get_syntax_type (edit_widget);
                 if (syntax_type != NULL)
                 {
-                    p = extract_arg (p, arg, sizeof (arg));
+                    p = extract_arg (p, arg, begin, sizeof (arg));
                     *condition = mc_search (arg, DEFAULT_CHARSET, syntax_type, MC_SEARCH_T_NORMAL);
                 }
             }
 #endif
             break;
         case 'd':
-            p = extract_arg (p, arg, sizeof (arg));
+            p = extract_arg (p, arg, begin, sizeof (arg));
             *condition = panel != NULL
                 && mc_search (arg, DEFAULT_CHARSET, vfs_path_as_str (panel->cwd_vpath),
                               search_type);
             break;
         case 't':
-            p = extract_arg (p, arg, sizeof (arg));
+            p = extract_arg (p, arg, begin, sizeof (arg));
             *condition = panel != NULL && test_type (panel, arg);
             break;
         case 'x':              /* executable */
             {
                 struct stat status;
 
-                p = extract_arg (p, arg, sizeof (arg));
+                p = extract_arg (p, arg, begin, sizeof (arg));
                 *condition = stat (arg, &status) == 0 && is_exe (status.st_mode);
                 break;
             }
@@ -356,12 +358,12 @@ debug_out (char *start, char *end, gboolean condition)
    the point just before the end of line. */
 
 static char *
-test_line (const WEdit * edit_widget, char *p, gboolean * result)
+test_line (const WEdit * edit_widget, char *p, const char *begin, gboolean * result)
 {
     char operator;
 
     /* Repeat till end of line */
-    while (*p != '\0' && *p != '\n')
+    while (p && *p != '\0' && *p != '\n')
     {
         char *debug_start, *debug_end;
         gboolean condition = TRUE;
@@ -384,7 +386,7 @@ test_line (const WEdit * edit_widget, char *p, gboolean * result)
             break;
 
         debug_start = p;
-        p = test_condition (edit_widget, p, &condition);
+        p = test_condition (edit_widget, p, begin, &condition);
         debug_end = p;
         /* Add one debug statement */
         debug_out (debug_start, debug_end, condition);
@@ -413,8 +415,10 @@ test_line (const WEdit * edit_widget, char *p, gboolean * result)
     /* Report debug message */
     debug_out (NULL, NULL, TRUE);
 
-    if (*p == '\0' || *p == '\n')
-        str_prev_char (&p);
+    if (p && (*p == '\0' || *p == '\n'))
+        str_prev_char (&p, begin);
+    if (!p)
+        p = (char *) begin;
     return p;
 }
 
@@ -1037,14 +1041,14 @@ user_menu_cmd (const WEdit * edit_widget, const char *menu_file, int selected_en
                 if (*(p + 1) == '=')
                 {
                     /* Combined adding and default */
-                    p = test_line (edit_widget, p + 1, &accept_entry);
+                    p = test_line (edit_widget, p + 1, data, &accept_entry);
                     if (selected == 0 && accept_entry)
                         selected = menu_lines;
                 }
                 else
                 {
                     /* A condition for adding the entry */
-                    p = test_line (edit_widget, p, &accept_entry);
+                    p = test_line (edit_widget, p, data, &accept_entry);
                 }
                 break;
 
@@ -1052,7 +1056,7 @@ user_menu_cmd (const WEdit * edit_widget, const char *menu_file, int selected_en
                 if (*(p + 1) == '+')
                 {
                     /* Combined adding and default */
-                    p = test_line (edit_widget, p + 1, &accept_entry);
+                    p = test_line (edit_widget, p + 1, data, &accept_entry);
                     if (selected == 0 && accept_entry)
                         selected = menu_lines;
                 }
@@ -1060,7 +1064,7 @@ user_menu_cmd (const WEdit * edit_widget, const char *menu_file, int selected_en
                 {
                     /* A condition for making the entry default */
                     i = 1;
-                    p = test_line (edit_widget, p, &i);
+                    p = test_line (edit_widget, p, data, &i);
                     if (selected == 0 && i != 0)
                         selected = menu_lines;
                 }

@@ -425,25 +425,37 @@ backward_word (WInput * in)
 {
     const char *p;
 
+    /* p is limited by strlen. */
     p = in->buffer + str_offset_to_pos (in->buffer, in->point);
 
-    while (p != in->buffer)
+    while (p && p != in->buffer)
     {
         const char *p_tmp;
 
         p_tmp = p;
-        str_cprev_char (&p);
-        if (!str_isspace (p) && !str_ispunct (p))
+        str_cprev_char (&p, in->buffer);
+        if (p)
         {
-            p = p_tmp;
-            break;
+            /*
+             * If preceding char isn't a word boundary (↔ we're ·in· a word), then undo last move and
+             * break from loop.
+             */
+
+            if (!str_isspace (p) && !str_ispunct (p))
+            {
+                p = p_tmp;
+                break;
+            }
+            in->point--;
         }
-        in->point--;
     }
-    while (p != in->buffer)
+
+    /* Further skip the ·word· chars, if not outside the string. */
+    while (p && p != in->buffer)
     {
-        str_cprev_char (&p);
-        if (str_isspace (p) || str_ispunct (p))
+        str_cprev_char (&p, in->buffer);
+        /* Stop when a word boundary char is detected or when the string ends. */
+        if (!p || str_isspace (p) || str_ispunct (p))
             break;
 
         in->point--;

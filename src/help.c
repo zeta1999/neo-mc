@@ -229,7 +229,8 @@ move_backward2 (const char *c, int lines)
     int line;
 
     currentpoint = c;
-    for (line = 0, p = currentpoint; (*p != '\0') && ((int) (p - fdata) >= 0); str_cprev_char (&p))
+    for (line = 0, p = currentpoint; p && (*p != '\0') && ((int) (p - fdata) >= 0);
+         str_cprev_char (&p, fdata))
     {
         if (*p == CHAR_NODE_END)
         {

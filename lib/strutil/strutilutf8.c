@@ -117,9 +117,9 @@ str_utf8_cnext_char (const char **text)
 /* --------------------------------------------------------------------------------------------- */
 
 static void
-str_utf8_cprev_char (const char **text)
+str_utf8_cprev_char (const char **text, const char *begin)
 {
-    (*text) = g_utf8_prev_char (*text);
+    (*text) = g_utf8_find_prev_char (begin, *text);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -136,17 +136,28 @@ str_utf8_cnext_char_safe (const char **text)
 /* --------------------------------------------------------------------------------------------- */
 
 static void
-str_utf8_cprev_char_safe (const char **text)
+str_utf8_cprev_char_safe (const char **text, const char *begin)
 {
     const char *result, *t;
 
-    result = g_utf8_prev_char (*text);
+    result = g_utf8_find_prev_char (begin, *text);
+    /* Beginning of the string reached (if NULL)? */
+    if (!result)
+    {
+        *text = NULL;
+        return;
+    }
+
     t = result;
     str_utf8_cnext_char_safe (&t);
     if (t == *text)
         (*text) = result;
     else
         (*text)--;
+
+    /* Additional check to ensure no buffer underruns. */
+    if (*text && *text < begin)
+        *text = NULL;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -262,7 +273,7 @@ str_utf8_cprev_noncomb_char (const char **text, const char *begin)
 
     while ((*text) != begin)
     {
-        str_utf8_cprev_char_safe (text);
+        str_utf8_cprev_char_safe (text, begin);
         count++;
         if (!str_utf8_iscombiningmark (*text))
             break;
@@ -889,12 +900,21 @@ str_utf8_trunc (const char *text, int width)
 }
 
 /* --------------------------------------------------------------------------------------------- */
+/* Converts a character index into a byte offset. */
 
 static int
 str_utf8_offset_to_pos (const char *text, size_t length)
 {
+    glong size;
+
     if (str_utf8_is_valid_string (text))
+    {
+        /* Limit index by string size. */
+        size = g_utf8_strlen (text, -1);
+        if (size < (glong) length)
+            length = (size_t) size;
         return g_utf8_offset_to_pointer (text, length) - text;
+    }
     else
     {
         int result;
@@ -902,6 +922,10 @@ str_utf8_offset_to_pos (const char *text, size_t length)
 
         buffer = g_string_new (text);
         str_utf8_fix_string (buffer->str);
+        /* Limit index by string size. */
+        size = g_utf8_strlen (buffer->str, -1);
+        if (size < (glong) length)
+            length = (size_t) size;
         result = g_utf8_offset_to_pointer (buffer->str, length) - buffer->str;
         g_string_free (buffer, TRUE);
         return result;

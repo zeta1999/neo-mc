@@ -85,9 +85,11 @@ str_ascii_cnext_char (const char **text)
 /* --------------------------------------------------------------------------------------------- */
 
 static void
-str_ascii_cprev_char (const char **text)
+str_ascii_cprev_char (const char **text, const char *begin)
 {
     (*text)--;
+    if (*text < begin)
+        *text = NULL;
 }
 
 /* --------------------------------------------------------------------------------------------- */
