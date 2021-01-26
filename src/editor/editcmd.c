@@ -96,7 +96,7 @@ gboolean option_drop_selection_on_copy = TRUE;
 
 #define TEMP_BUF_LEN 1024
 
-#define MAX_WORD_COMPLETIONS 100        /* in listbox */
+#define MAX_WORD_COMPLETIONS 150        /* in listbox */
 
 /*** file scope type declarations ****************************************************************/
 
@@ -1169,7 +1169,7 @@ edit_collect_completions_get_current_word (edit_search_status_msg_t * esm, mc_se
 
 static gsize
 edit_collect_completions (WEdit * edit, off_t word_start, gsize word_len,
-                          char *match_expr, GString ** compl, gsize * num)
+                          char *match_expr, GString ** compl, gsize * num, gsize current_limit)
 {
     gsize len = 0;
     gsize max_len = 0;
@@ -1259,7 +1259,7 @@ edit_collect_completions (WEdit * edit, off_t word_start, gsize word_len,
         if (skip != 0)
             continue;
 
-        if (*num == MAX_WORD_COMPLETIONS)
+        if (*num >= current_limit)
         {
             g_string_free (compl[0], TRUE);
             for (i = 1; i < *num; i++)
@@ -3296,6 +3296,10 @@ edit_complete_word_cmd (WEdit * edit)
     GString *match_expr;
     GString *compl[MAX_WORD_COMPLETIONS];       /* completions */
 
+    WEdit *edit_wid;
+    const WGroup *gr;
+    GList *w;
+
     /* search start of word to be completed */
     if (!edit_buffer_find_word_start (&edit->buffer, FALSE, &word_start, &word_len))
         return;
@@ -3312,7 +3316,39 @@ edit_complete_word_cmd (WEdit * edit)
     /* start search from begin to end of file */
     max_len =
         edit_collect_completions (edit, word_start, word_len, match_expr->str, (GString **) & compl,
-                                  &num_compl);
+                                  &num_compl, MAX_WORD_COMPLETIONS);
+
+    /*
+     * Should search also other open files ? This «if» collects them up to MAX_WORD_COMPLETIONS
+     * limit.
+     */
+    if (option_completion_collect_other_files && num_compl < MAX_WORD_COMPLETIONS)
+    {
+        /*
+         * Process all the remaining files by listing the editor widgets
+         * grouped in the main editor dialog.
+         */
+        gr = CONST_GROUP (CONST_WIDGET (edit)->owner);
+        for (w = gr->widgets; w != NULL; w = g_list_next (w))
+        {
+            if (w->data != edit && edit_widget_is_editor (CONST_WIDGET (w->data)))
+            {
+                gsize max_len_candidate, num_compl_sub = 0;
+                edit_wid = (WEdit *) w->data;
+                max_len_candidate =
+                    edit_collect_completions (edit_wid, word_start, word_len, match_expr->str,
+                                              ((GString **) & compl) + num_compl, &num_compl_sub,
+                                              MAX_WORD_COMPLETIONS - num_compl);
+
+                if (max_len_candidate > max_len)
+                    max_len = max_len_candidate;
+
+                num_compl += num_compl_sub;
+                if (num_compl >= MAX_WORD_COMPLETIONS)
+                    break;
+            }
+        }
+    }
 
     if (num_compl > 0)
     {

@@ -390,6 +390,7 @@ editcmd_dialog_completion_show (const WEdit * edit, int max_len, GString ** comp
 
     /* Save WListbox pointer for convenience. */
     lw = LISTBOX (compl_list);
+    lw->allow_duplicates = FALSE;
 
     /* add the dialog */
     group_add_widget (GROUP (compl_dlg), compl_list);
@@ -397,6 +398,14 @@ editcmd_dialog_completion_show (const WEdit * edit, int max_len, GString ** comp
     /* fill the listbox with the completions */
     for (i = num_compl - 1; i >= 0; i--)        /* reverse order */
         listbox_add_item (lw, LISTBOX_APPEND_AT_END, 0, (char *) compl[i]->str, NULL, FALSE);
+
+    /* Set widgets size after possible duplicates removal. */
+    num_compl = listbox_get_length (compl_list);
+    if (num_compl < compl_dlg_h - 2)
+    {
+        WIDGET (compl_list)->lines = num_compl;
+        WIDGET (compl_dlg)->lines = num_compl + 2;
+    }
 
     /* pop up the dialog and apply the chosen completion */
     if (dlg_run (compl_dlg) == B_ENTER)

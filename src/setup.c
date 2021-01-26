@@ -357,6 +357,7 @@ static const struct
     { "editor_show_right_margin", &show_right_margin },
     { "editor_group_undo", &option_group_undo },
     { "editor_state_full_filename", &option_state_full_filename },
+    { "editor_wordcompletion_collect_other_files", &option_completion_collect_other_files },
 #endif /* USE_INTERNAL_EDIT */
     { "editor_ask_filename_before_edit", &editor_ask_filename_before_edit },
     { "nice_rotating_dash", &nice_rotating_dash },
