@@ -31,7 +31,7 @@
 #include <errno.h>
 
 #include "lib/global.h"
-#include "lib/util.h"           /* MC_PTR_FREE */
+#include "lib/sub-util.h"           /* MC_PTR_FREE */
 #include "lib/strutil.h"
 
 /*** global variables ****************************************************************************/

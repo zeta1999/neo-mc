@@ -32,7 +32,7 @@
 #include "lib/tty/tty.h"
 #include "lib/strutil.h"
 #include "lib/vfs/vfs.h"
-#include "lib/util.h"           /* x_basename() */
+#include "lib/sub-util.h"           /* x_basename() */
 
 #ifdef ENABLE_VFS_SMB
 #include "src/vfs/smbfs/smbfs.h"        /* smbfs_set_debugf()  */

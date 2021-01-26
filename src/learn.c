@@ -39,7 +39,7 @@
 #include "lib/mcconfig.h"
 #include "lib/strescape.h"
 #include "lib/strutil.h"
-#include "lib/util.h"           /* convert_controls() */
+#include "lib/sub-util.h"           /* convert_controls() */
 #include "lib/widget.h"
 
 #include "setup.h"

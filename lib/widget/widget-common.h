@@ -7,8 +7,8 @@
 #define MC__WIDGET_INTERNAL_H
 
 #include "lib/keybind.h"        /* global_keymap_t */
-#include "lib/tty/mouse.h"
-#include "lib/widget/mouse.h"   /* mouse_msg_t, mouse_event_t */
+#include "lib/tty/tty-mouse.h"
+#include "lib/widget/widget-mouse.h"   /* mouse_msg_t, mouse_event_t */
 
 /*** typedefs(not structures) and defined constants **********************************************/
 

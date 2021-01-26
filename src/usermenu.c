@@ -43,7 +43,7 @@
 #include "lib/search.h"
 #include "lib/vfs/vfs.h"
 #include "lib/strutil.h"
-#include "lib/util.h"
+#include "lib/sub-util.h"
 #include "lib/widget.h"
 
 #include "src/editor/edit.h"    /* WEdit, BLOCK_FILE */
@@ -53,7 +53,7 @@
 #include "src/setup.h"
 #include "src/history.h"
 
-#include "src/filemanager/dir.h"
+#include "src/filemanager/fman-dir.h"
 #include "src/filemanager/filemanager.h"
 #include "src/filemanager/layout.h"
 

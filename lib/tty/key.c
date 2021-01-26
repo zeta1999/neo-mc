@@ -54,7 +54,7 @@
 
 #include "tty.h"
 #include "tty-internal.h"       /* mouse_enabled */
-#include "mouse.h"
+#include "tty-mouse.h"
 #include "key.h"
 
 #include "lib/widget.h"         /* mc_refresh() */

@@ -43,14 +43,14 @@
 
 #include "lib/global.h"
 #include "lib/strutil.h"        /* str_term_form */
-#include "lib/util.h"           /* is_printable() */
+#include "lib/sub-util.h"           /* is_printable() */
 
 #include "tty-internal.h"       /* mc_tty_normalize_from_utf8() */
 #include "tty.h"
 #include "color.h"
 #include "color-slang.h"
 #include "color-internal.h"
-#include "mouse.h"              /* Gpm_Event is required in key.h */
+#include "tty-mouse.h"              /* Gpm_Event is required in key.h */
 #include "key.h"                /* define_sequence */
 #include "win.h"
 

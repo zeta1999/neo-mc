@@ -5,7 +5,7 @@
 #ifndef MC__BOXES_H
 #define MC__BOXES_H
 
-#include "dir.h"
+#include "fman-dir.h"
 #include "panel.h"
 
 /*** typedefs(not structures) and defined constants **********************************************/

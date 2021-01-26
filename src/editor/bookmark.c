@@ -43,7 +43,7 @@
 #include <unistd.h>
 
 #include "lib/global.h"
-#include "lib/util.h"           /* MAX_SAVED_BOOKMARKS */
+#include "lib/sub-util.h"           /* MAX_SAVED_BOOKMARKS */
 
 #include "editwidget.h"
 

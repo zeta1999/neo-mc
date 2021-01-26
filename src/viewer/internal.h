@@ -12,7 +12,7 @@
 #include "lib/vfs/vfs.h"        /* vfs_path_t */
 
 #include "src/keybind-defaults.h"       /* global_keymap_t */
-#include "src/filemanager/dir.h"        /* dir_list */
+#include "src/filemanager/fman-dir.h"        /* dir_list */
 
 #include "mcviewer.h"
 

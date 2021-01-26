@@ -39,7 +39,7 @@
 
 #include "lib/global.h"
 
-#include "lib/util.h"
+#include "lib/sub-util.h"
 #include "lib/tty/tty.h"        /* tty_enable_interrupt_key () */
 #include "lib/vfs/utilvfs.h"
 

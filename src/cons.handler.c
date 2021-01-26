@@ -44,7 +44,7 @@
 #include "lib/tty/tty.h"
 #include "lib/tty/color.h"      /* tty_set_normal_attrs */
 #include "lib/tty/win.h"
-#include "lib/util.h"           /* mc_build_filename() */
+#include "lib/sub-util.h"           /* mc_build_filename() */
 
 #include "consaver/cons.saver.h"
 

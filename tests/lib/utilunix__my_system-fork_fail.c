@@ -30,7 +30,7 @@
 #include <signal.h>
 #include <unistd.h>
 
-#include "lib/util.h"
+#include "lib/sub-util.h"
 #include "lib/utilunix.h"
 
 #include "utilunix__my_system-common.c"

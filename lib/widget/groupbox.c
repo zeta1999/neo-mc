@@ -39,7 +39,7 @@
 #include "lib/tty/tty.h"
 #include "lib/tty/color.h"
 #include "lib/skin.h"
-#include "lib/util.h"
+#include "lib/sub-util.h"
 #include "lib/widget.h"
 
 /*** global variables ****************************************************************************/

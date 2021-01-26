@@ -13,14 +13,14 @@ libmcwidget_la_SOURCES = \
 	group.c group.h \
 	groupbox.c groupbox.h \
 	hline.c hline.h \
-	history.c history.h \
+	history-widget.c history-widget.h \
 	input.c input.h \
 	input_complete.c \
 	listbox-window.c listbox-window.h \
 	listbox.c listbox.h \
 	label.c label.h \
 	menu.c menu.h \
-	mouse.c mouse.h \
+	widget-mouse.c widget-mouse.h \
 	quick.c quick.h \
 	radio.c radio.h \
 	rect.c rect.h \

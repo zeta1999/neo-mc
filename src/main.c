@@ -48,12 +48,12 @@
 #include "lib/event.h"
 #include "lib/tty/tty.h"
 #include "lib/tty/key.h"        /* For init_key() */
-#include "lib/tty/mouse.h"      /* init_mouse() */
+#include "lib/tty/tty-mouse.h"      /* init_mouse() */
 #include "lib/skin.h"
 #include "lib/filehighlight.h"
 #include "lib/fileloc.h"
 #include "lib/strutil.h"
-#include "lib/util.h"
+#include "lib/sub-util.h"
 #include "lib/vfs/vfs.h"        /* vfs_init(), vfs_shut() */
 
 #include "filemanager/filemanager.h"

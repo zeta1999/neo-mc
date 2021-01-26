@@ -43,13 +43,13 @@
 #include "lib/vfs/vfs.h"
 #include "lib/mcconfig.h"       /* Load/save directories panelize */
 #include "lib/strutil.h"
-#include "lib/util.h"
+#include "lib/sub-util.h"
 #include "lib/widget.h"
 
 #include "src/setup.h"          /* For profile_bname */
 #include "src/history.h"
 
-#include "dir.h"
+#include "fman-dir.h"
 #include "filemanager.h"        /* current_panel */
 #include "layout.h"             /* rotate_dash() */
 #include "panel.h"              /* WPanel */

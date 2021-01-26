@@ -42,7 +42,7 @@
 #include "lib/skin.h"
 #include "lib/vfs/vfs.h"
 #include "lib/strutil.h"
-#include "lib/util.h"
+#include "lib/sub-util.h"
 #include "lib/widget.h"
 
 #include "cmd.h"                /* advanced_chown_cmd() */

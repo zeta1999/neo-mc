@@ -47,7 +47,7 @@
 #include "lib/skin/skin.h"
 
 /* Needed for the extern declarations of integer parameters */
-#include "dir.h"
+#include "fman-dir.h"
 #include "panel.h"              /* Needed for the externs */
 #include "file.h"
 #include "listmode.h"

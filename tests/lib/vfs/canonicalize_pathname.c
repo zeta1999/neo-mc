@@ -32,7 +32,7 @@
 #endif
 
 #include "lib/strutil.h"
-#include "lib/util.h"
+#include "lib/sub-util.h"
 #include "lib/vfs/xdirentry.h"
 
 #include "src/vfs/local/local.c"

@@ -29,7 +29,7 @@
 
 #include "lib/global.h"
 #include "lib/vfs/vfs.h"        /* mc_stat */
-#include "lib/util.h"
+#include "lib/sub-util.h"
 
 #include "lib/mcconfig.h"
 

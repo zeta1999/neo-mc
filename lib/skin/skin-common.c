@@ -29,7 +29,7 @@
 #include <stdlib.h>
 
 #include "internal.h"
-#include "lib/util.h"
+#include "lib/sub-util.h"
 
 #include "lib/tty/color.h"      /* tty_use_256colors(); */
 

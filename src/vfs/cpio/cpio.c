@@ -38,7 +38,7 @@
 
 #include "lib/global.h"
 #include "lib/unixcompat.h"
-#include "lib/util.h"
+#include "lib/sub-util.h"
 #include "lib/widget.h"         /* message() */
 
 #include "lib/vfs/vfs.h"

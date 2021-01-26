@@ -67,7 +67,7 @@
 #include "lib/unixcompat.h"
 #include "lib/vfs/vfs.h"        /* VFS_ENCODING_PREFIX */
 #include "lib/strutil.h"        /* str_move() */
-#include "lib/util.h"
+#include "lib/sub-util.h"
 #include "lib/widget.h"         /* message() */
 #include "lib/vfs/xdirentry.h"
 

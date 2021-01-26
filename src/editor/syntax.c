@@ -58,7 +58,7 @@
 #include "lib/skin.h"
 #include "lib/fileloc.h"        /* EDIT_HOME_DIR, EDIT_HOME_SYNTAX_FILE */
 #include "lib/strutil.h"        /* utf string functions */
-#include "lib/util.h"
+#include "lib/sub-util.h"
 #include "lib/widget.h"         /* message() */
 
 #include "edit-impl.h"

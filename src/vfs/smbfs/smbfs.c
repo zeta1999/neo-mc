@@ -47,7 +47,7 @@
 
 #include "lib/global.h"
 #include "lib/strutil.h"
-#include "lib/util.h"
+#include "lib/sub-util.h"
 #include "lib/widget.h"         /* message() */
 
 #undef  PACKAGE_BUGREPORT

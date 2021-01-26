@@ -58,7 +58,7 @@
 #include "lib/vfs/vfs.h"
 #include "lib/fileloc.h"
 #include "lib/strutil.h"
-#include "lib/util.h"
+#include "lib/sub-util.h"
 #include "lib/widget.h"
 #include "lib/keybind.h"        /* CK_Down, CK_History */
 #include "lib/event.h"          /* mc_event_raise() */
@@ -90,7 +90,7 @@
 #include "layout.h"             /* get_current_type() */
 #include "ext.h"                /* regex_command() */
 #include "boxes.h"              /* cd_box() */
-#include "dir.h"
+#include "fman-dir.h"
 #include "cd.h"                 /* cd_to() */
 
 #include "cmd.h"                /* Our definitions */

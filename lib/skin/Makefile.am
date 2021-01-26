@@ -3,7 +3,7 @@ noinst_LTLIBRARIES = libmcskin.la
 libmcskin_la_SOURCES = \
 	colors.c \
 	colors-old.c \
-	common.c \
+	skin-common.c \
 	hc-skins.c \
 	ini-file.c \
 	lines.c \

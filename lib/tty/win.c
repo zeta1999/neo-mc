@@ -41,7 +41,7 @@
 #endif
 
 #include "lib/global.h"
-#include "lib/util.h"           /* is_printable() */
+#include "lib/sub-util.h"           /* is_printable() */
 #include "tty-internal.h"
 #include "tty.h"                /* tty_gotoyx, tty_print_char */
 #include "win.h"

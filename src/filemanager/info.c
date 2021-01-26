@@ -45,7 +45,7 @@
 #include "lib/skin.h"
 #include "lib/strutil.h"
 #include "lib/timefmt.h"        /* file_date() */
-#include "lib/util.h"
+#include "lib/sub-util.h"
 #include "lib/widget.h"
 
 #include "src/setup.h"          /* panels_options */

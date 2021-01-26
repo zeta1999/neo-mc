@@ -32,7 +32,7 @@
 
 #include "internal.h"
 #include "lib/fileloc.h"
-#include "lib/util.h"           /* exist_file() */
+#include "lib/sub-util.h"           /* exist_file() */
 
 /*** global variables ****************************************************************************/
 

@@ -49,7 +49,7 @@
 #include "lib/global.h"
 
 #include "tty.h"
-#include "mouse.h"              /* required before key.h */
+#include "tty-mouse.h"              /* required before key.h */
 #include "key.h"
 
 #if defined (__QNX__) && !defined (__QNXNTO__)

@@ -43,7 +43,7 @@
 #include "lib/skin.h"
 #include "lib/vfs/vfs.h"
 #include "lib/lock.h"           /* lock_file() and unlock_file() */
-#include "lib/util.h"
+#include "lib/sub-util.h"
 #include "lib/widget.h"
 #ifdef HAVE_CHARSET
 #include "lib/charsets.h"

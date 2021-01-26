@@ -15,7 +15,7 @@ TTY_SRC = \
 	color-internal.c color-internal.h \
 	color.c color.h \
 	key.c key.h keyxdef.c \
-	mouse.c mouse.h \
+	tty-mouse.c tty-mouse.h \
 	tty-internal.c tty-internal.h \
 	tty.c tty.h \
 	win.c win.h

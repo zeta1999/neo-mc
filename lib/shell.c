@@ -35,7 +35,7 @@
 #include <stdlib.h>
 
 #include "global.h"
-#include "util.h"
+#include "sub-util.h"
 
 
 /*** global variables ****************************************************************************/

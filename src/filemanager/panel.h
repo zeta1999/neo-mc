@@ -14,7 +14,7 @@
 #include "lib/widget.h"         /* Widget */
 #include "lib/filehighlight.h"
 
-#include "dir.h"                /* dir_list */
+#include "fman-dir.h"                /* dir_list */
 
 /*** typedefs(not structures) and defined constants **********************************************/
 

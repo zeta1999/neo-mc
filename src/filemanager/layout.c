@@ -44,13 +44,13 @@
 #include "lib/tty/tty.h"
 #include "lib/skin.h"
 #include "lib/tty/key.h"
-#include "lib/tty/mouse.h"
+#include "lib/tty/tty-mouse.h"
 #include "lib/mcconfig.h"
 #include "lib/vfs/vfs.h"        /* For _vfs_get_cwd () */
 #include "lib/strutil.h"
 #include "lib/widget.h"
 #include "lib/event.h"
-#include "lib/util.h"           /* mc_time_elapsed() */
+#include "lib/sub-util.h"           /* mc_time_elapsed() */
 
 #include "src/consaver/cons.saver.h"
 #include "src/viewer/mcviewer.h"        /* The view widget */
@@ -63,7 +63,7 @@
 #include "filemanager.h"
 #include "tree.h"
 /* Needed for the extern declarations of integer parameters */
-#include "dir.h"
+#include "fman-dir.h"
 #include "layout.h"
 #include "info.h"               /* The Info widget */
 

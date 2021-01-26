@@ -2,9 +2,9 @@
 noinst_LTLIBRARIES = libmcconfig.la
 
 libmcconfig_la_SOURCES = \
-	common.c \
+	mcconf-common.c \
 	get.c \
-	history.c \
+	mcconf-history.c \
 	set.c \
 	paths.c
 

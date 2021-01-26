@@ -88,7 +88,7 @@ endif
 
 
 if ENABLE_BACKGROUND
-    libinternal_la_SOURCES += background.c background.h
+    libinternal_la_SOURCES += task-background.c task-background.h
 endif
 
 EXTRA_DIST = $(SRC_maintainer) $(SRC_charset)

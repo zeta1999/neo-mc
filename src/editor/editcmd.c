@@ -53,7 +53,7 @@
 #include "lib/strutil.h"        /* utf string functions */
 #include "lib/fileloc.h"
 #include "lib/lock.h"
-#include "lib/util.h"           /* tilde_expand() */
+#include "lib/sub-util.h"           /* tilde_expand() */
 #include "lib/vfs/vfs.h"
 #include "lib/widget.h"
 #include "lib/event.h"          /* mc_event_raise() */
