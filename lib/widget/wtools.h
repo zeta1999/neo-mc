@@ -61,6 +61,17 @@ struct simple_status_msg_t
 
 /*** declarations of public functions ************************************************************/
 
+/*
+ * A simple message queue that postpones the messages until MC enters the main loop. It allows to
+ * use dialog messages early during the initialization, e.g.: to signal problems during it. Message
+ * will appear when UI is fully initialized and drawn.
+ */
+
+gboolean are_postponed_messages (void);
+void postponed_message (int flags, const char *title, const char *text, ...)
+    __attribute__ ((format (printf, 3, 4)));
+void display_postponed_messages (void);
+
 /* The input dialogs */
 char *input_dialog (const char *header, const char *text,
                     const char *history_name, const char *def_text,

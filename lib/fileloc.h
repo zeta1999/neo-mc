@@ -30,6 +30,8 @@
 #define CHARSETS_LIST           "mc.charsets"
 #define MC_LIB_EXT              "mc.ext"
 #define MC_MACRO_FILE           "mc.macros"
+#define MC_SLANG_INIT_FILE      "init.sl"
+#define MC_PLUGIN_DIR           "plugin"
 
 #define FISH_PREFIX             "fish"
 

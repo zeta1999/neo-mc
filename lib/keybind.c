@@ -38,6 +38,8 @@
 
 /*** global variables ****************************************************************************/
 
+int new_dynamic_command_id = 100000;
+
 /*** file scope macro definitions ****************************************************************/
 
 #define ADD_KEYMAP_NAME(name) \
@@ -47,7 +49,7 @@
 
 /*** file scope variables ************************************************************************/
 
-static name_keymap_t command_names[] = {
+static name_keymap_t command_names_start[] = {
     /* common */
     ADD_KEYMAP_NAME (InsertChar),
     ADD_KEYMAP_NAME (Enter),
@@ -380,11 +382,22 @@ static name_keymap_t command_names[] = {
     {NULL, CK_IgnoreKey}
 };
 
-/* *INDENT-OFF* */
-static const size_t num_command_names = G_N_ELEMENTS (command_names) - 1;
-/* *INDENT-ON* */
+static name_keymap_t *command_names = NULL;
+
+static size_t num_command_names = 0;
+
+static gboolean has_been_sorted = FALSE;
 
 /*** file scope functions ************************************************************************/
+/* --------------------------------------------------------------------------------------------- */
+
+/* Initializes the dynamic command names array. */
+static void
+init_command_names (void)
+{
+    keybind_add_new_action (NULL, -1);
+}
+
 /* --------------------------------------------------------------------------------------------- */
 
 static int
@@ -401,12 +414,14 @@ name_keymap_comparator (const void *p1, const void *p2)
 static inline void
 sort_command_names (void)
 {
-    static gboolean has_been_sorted = FALSE;
+    if (!command_names)
+        init_command_names ();
 
     if (!has_been_sorted)
     {
         qsort (command_names, num_command_names,
                sizeof (command_names[0]), &name_keymap_comparator);
+
         has_been_sorted = TRUE;
     }
 }
@@ -414,7 +429,7 @@ sort_command_names (void)
 /* --------------------------------------------------------------------------------------------- */
 
 static void
-keymap_add (GArray * keymap, long key, long cmd, const char *caption)
+keymap_add (GArray * keymap, long key, long cmd, const char *caption, key_origin_t origin)
 {
     if (key != 0 && cmd != CK_IgnoreKey)
     {
@@ -422,6 +437,7 @@ keymap_add (GArray * keymap, long key, long cmd, const char *caption)
 
         new_bind.key = key;
         new_bind.command = cmd;
+        new_bind.origin = origin;
         g_snprintf (new_bind.caption, sizeof (new_bind.caption), "%s", caption);
         g_array_append_val (keymap, new_bind);
     }
@@ -431,14 +447,96 @@ keymap_add (GArray * keymap, long key, long cmd, const char *caption)
 /*** public functions ****************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 
+/* Adds a dynamic command name. Can be used to initialize the dynamic
+   command names array by passing NULL as the first parameter. */
+int
+keybind_add_new_action (const char *new_command_name, int new_ck_id)
+{
+    name_keymap_t search_key = { 0 };
+    name_keymap_t *old_command_names = command_names, *res = NULL, *src_commands;
+    int ret = 0,                /* Default return code → no command name added */
+        size = 0;
+
+    /* Make a private copy of the command name. */
+    search_key.name = new_command_name = g_strdup (new_command_name);
+
+    /* Count the size of the existing command names array. */
+
+    src_commands = command_names ? command_names : command_names_start;
+    for (; src_commands[size].name; size++);
+
+    /* Initialize the size variable of the command names array. */
+    num_command_names = size;
+
+    /* Check if the key already exists, i.e.: if the command is already registered. */
+    if (search_key.name != NULL && strlen (search_key.name))
+    {
+        res = bsearch (&search_key, src_commands,
+                       num_command_names, sizeof (command_names_start[0]), name_keymap_comparator);
+    }
+
+    /*
+     * a) Such command already exists or, b) no command given and the registry is already
+     * initialized (the first bootstrap invocation has been already run) ? If so, then exit doing
+     * no action. Note that the CK ID of the existing command is not updated and remains the same.
+     */
+
+    if (res != NULL || (!new_command_name && old_command_names))
+    {
+        return ret;
+    }
+
+    /* Allocate new space and copy the old keymap names. */
+    command_names = (name_keymap_t *) calloc (size + (new_command_name ? 2 : 1),
+                                              sizeof (name_keymap_t));
+
+    /* Extending an existing array? */
+    if (old_command_names != NULL)
+    {
+        /* ...yes. Copy from `old_command_names` dynamic array. */
+        memcpy (command_names, old_command_names, (size + 1) * sizeof (name_keymap_t));
+
+        /* Release the previous command names after copying them. */
+        free (old_command_names);
+    }
+    else
+    {
+        /* ...no. Copy the initial, compiled in command names into the dynamic array. */
+        memcpy (command_names, command_names_start, sizeof (command_names_start));
+    }
+
+    /* Add a new keymap if requested (i.e.: if given any non-NULL name). */
+    if (new_command_name != NULL)
+    {
+        /* Insert the new command name at the end, then follow an empty sentinel element. */
+        command_names[size].name = new_command_name;
+        command_names[size].val = new_ck_id;
+        command_names[size + 1].name = NULL;
+        command_names[size + 1].val = CK_IgnoreKey;
+
+        /* Increase the command name count. */
+        num_command_names++;
+
+        /* Sort the new array. */
+        has_been_sorted = FALSE;
+        sort_command_names ();
+
+        /* Return that a new command name has been registered. */
+        ret = 1;
+    }
+    return ret;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
 void
-keybind_cmd_bind (GArray * keymap, const char *keybind, long action)
+keybind_cmd_bind (GArray * keymap, const char *keybind, long action, key_origin_t origin)
 {
     char *caption = NULL;
     long key;
 
     key = lookup_key (keybind, &caption);
-    keymap_add (keymap, key, action, caption);
+    keymap_add (keymap, key, action, caption, origin);
     g_free (caption);
 }
 
@@ -464,12 +562,34 @@ const char *
 keybind_lookup_actionname (long action)
 {
     size_t i;
+    const char *name = NULL;
 
     for (i = 0; command_names[i].name != NULL; i++)
         if (command_names[i].val == action)
-            return command_names[i].name;
+        {
+            name = command_names[i].name;
+            break;
+        }
 
-    return NULL;
+
+    return name;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+/* Finds and returns the ·origin· field of the key bound to the given CK action. */
+key_origin_t
+keybind_lookup_keymap_origin (const global_keymap_t * keymap, long action)
+{
+    if (keymap != NULL)
+    {
+        size_t i;
+
+        for (i = 0; keymap[i].key != 0; i++)
+            if (keymap[i].command == action)
+                return keymap[i].origin;
+    }
+    return ORIGIN_UNKNOWN;
 }
 
 /* --------------------------------------------------------------------------------------------- */
