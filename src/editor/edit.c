@@ -3023,6 +3023,22 @@ edit_move_to_line (WEdit * e, long line)
 }
 
 /* --------------------------------------------------------------------------------------------- */
+/** scroll window so that current line is in center; the diff is a relative offset from that
+  * position */
+
+void
+edit_center_display (WEdit * e, long diff)
+{
+    int center_line_diff = WIDGET (e)->lines / 2 + diff;
+    int current_line = e->curs_row;
+
+    if (current_line < center_line_diff)
+        edit_scroll_upward (e, center_line_diff - current_line);
+    else
+        edit_scroll_downward (e, current_line - center_line_diff);
+}
+
+/* --------------------------------------------------------------------------------------------- */
 /** scroll window so that first visible line is 'line' */
 
 void
@@ -3763,6 +3779,11 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion)
                 edit_move_to_line (edit, p->line);
             }
         }
+        break;
+
+    case CK_CenterView:
+        /* Center view at cursor line. */
+        edit_center_display (edit, 0);
         break;
 
     case CK_Top:
