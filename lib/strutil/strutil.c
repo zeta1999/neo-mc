@@ -508,35 +508,35 @@ str_cnext_char (const char **text)
 /* --------------------------------------------------------------------------------------------- */
 
 char *
-str_get_prev_char (char *text)
+str_get_prev_char (char *text, const char *begin)
 {
-    used_class.cprev_char ((const char **) &text);
+    used_class.cprev_char ((const char **) &text, begin);
     return text;
 }
 
 /* --------------------------------------------------------------------------------------------- */
 
 const char *
-str_cget_prev_char (const char *text)
+str_cget_prev_char (const char *text, const char *begin)
 {
-    used_class.cprev_char (&text);
+    used_class.cprev_char (&text, begin);
     return text;
 }
 
 /* --------------------------------------------------------------------------------------------- */
 
 void
-str_prev_char (char **text)
+str_prev_char (char **text, const char *begin)
 {
-    used_class.cprev_char ((const char **) text);
+    used_class.cprev_char ((const char **) text, begin);
 }
 
 /* --------------------------------------------------------------------------------------------- */
 
 void
-str_cprev_char (const char **text)
+str_cprev_char (const char **text, const char *begin)
 {
-    used_class.cprev_char (text);
+    used_class.cprev_char (text, begin);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -576,35 +576,35 @@ str_cnext_char_safe (const char **text)
 /* --------------------------------------------------------------------------------------------- */
 
 char *
-str_get_prev_char_safe (char *text)
+str_get_prev_char_safe (char *text, const char *begin)
 {
-    used_class.cprev_char_safe ((const char **) &text);
+    used_class.cprev_char_safe ((const char **) &text, begin);
     return text;
 }
 
 /* --------------------------------------------------------------------------------------------- */
 
 const char *
-str_cget_prev_char_safe (const char *text)
+str_cget_prev_char_safe (const char *text, const char *begin)
 {
-    used_class.cprev_char_safe (&text);
+    used_class.cprev_char_safe (&text, begin);
     return text;
 }
 
 /* --------------------------------------------------------------------------------------------- */
 
 void
-str_prev_char_safe (char **text)
+str_prev_char_safe (char **text, const char *begin)
 {
-    used_class.cprev_char_safe ((const char **) text);
+    used_class.cprev_char_safe ((const char **) text, begin);
 }
 
 /* --------------------------------------------------------------------------------------------- */
 
 void
-str_cprev_char_safe (const char **text)
+str_cprev_char_safe (const char **text, const char *begin)
 {
-    used_class.cprev_char_safe (text);
+    used_class.cprev_char_safe (text, begin);
 }
 
 /* --------------------------------------------------------------------------------------------- */

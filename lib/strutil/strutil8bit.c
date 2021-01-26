@@ -112,9 +112,11 @@ str_8bit_cnext_char (const char **text)
 /* --------------------------------------------------------------------------------------------- */
 
 static void
-str_8bit_cprev_char (const char **text)
+str_8bit_cprev_char (const char **text, const char *begin)
 {
     (*text)--;
+    if (*text < begin)
+        *text = NULL;
 }
 
 /* --------------------------------------------------------------------------------------------- */

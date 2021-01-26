@@ -110,9 +110,9 @@ struct str_class
     gboolean (*is_valid_string) (const char *);
       /*I*/ int (*is_valid_char) (const char *, size_t);
       /*I*/ void (*cnext_char) (const char **);
-    void (*cprev_char) (const char **);
+    void (*cprev_char) (const char **, const char *begin);
     void (*cnext_char_safe) (const char **);
-      /*I*/ void (*cprev_char_safe) (const char **);
+      /*I*/ void (*cprev_char_safe) (const char **, const char *begin);
       /*I*/ int (*cnext_noncomb_char) (const char **text);
       /*I*/ int (*cprev_noncomb_char) (const char **text, const char *begin);
       /*I*/ gboolean (*char_isspace) (const char *);
@@ -262,20 +262,20 @@ int str_is_valid_char (const char *ch, size_t size);
 char *str_get_next_char (char *text);
 const char *str_cget_next_char (const char *text);
 
-/* return previous characters before text, do not call on the start of strings
+/* return previous characters before text
  */
-char *str_get_prev_char (char *text);
-const char *str_cget_prev_char (const char *text);
+char *str_get_prev_char (char *text, const char *begin);
+const char *str_cget_prev_char (const char *text, const char *begin);
 
 /* set text to next characters, do not call on the end of string
  */
 void str_next_char (char **text);
 void str_cnext_char (const char **text);
 
-/* set text to previous characters, do not call on the start of strings
+/* set text to previous characters
  */
-void str_prev_char (char **text);
-void str_cprev_char (const char **text);
+void str_prev_char (char **text, const char *begin);
+void str_cprev_char (const char **text, const char *begin);
 
 /* return next characters after text, do not call on the end of string
  * works with invalid string 
@@ -284,12 +284,11 @@ void str_cprev_char (const char **text);
 char *str_get_next_char_safe (char *text);
 const char *str_cget_next_char_safe (const char *text);
 
-/* return previous characters before text, do not call on the start of strings
- * works with invalid string 
+/* return previous characters before text, works with invalid string
  * I
  */
-char *str_get_prev_char_safe (char *text);
-const char *str_cget_prev_char_safe (const char *text);
+char *str_get_prev_char_safe (char *text, const char *begin);
+const char *str_cget_prev_char_safe (const char *text, const char *begin);
 
 /* set text to next characters, do not call on the end of string
  * works with invalid string 
@@ -298,12 +297,11 @@ const char *str_cget_prev_char_safe (const char *text);
 void str_next_char_safe (char **text);
 void str_cnext_char_safe (const char **text);
 
-/* set text to previous characters, do not call on the start of strings
- * works with invalid string 
+/* set text to previous characters, works with invalid string
  * I
  */
-void str_prev_char_safe (char **text);
-void str_cprev_char_safe (const char **text);
+void str_prev_char_safe (char **text, const char *begin);
+void str_cprev_char_safe (const char **text, const char *begin);
 
 /* set text to next noncombining characters, check the end of text
  * return how many characters was skipped
