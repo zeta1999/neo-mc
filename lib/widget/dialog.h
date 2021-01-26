@@ -109,6 +109,7 @@ int dlg_run (WDialog * d);
 void dlg_destroy (WDialog * h);
 
 void dlg_run_done (WDialog * h);
+void dlg_read_history (WDialog * h);
 void dlg_save_history (WDialog * h);
 void dlg_process_event (WDialog * h, int key, Gpm_Event * event);
 

@@ -16,8 +16,10 @@ libmcwidget_la_SOURCES = \
 	history.c history.h \
 	input.c input.h \
 	input_complete.c \
+	forwarding_input.c forwarding_input.h \
 	listbox-window.c listbox-window.h \
 	listbox.c listbox.h \
+	filtering_listbox.c filtering_listbox.h \
 	label.c label.h \
 	menu.c menu.h \
 	mouse.c mouse.h \

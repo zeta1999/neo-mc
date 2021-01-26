@@ -88,30 +88,6 @@ dlg_default_get_colors (const Widget * w)
 }
 
 /* --------------------------------------------------------------------------------------------- */
-/**
-  * Read histories from the ${XDG_CACHE_HOME}/mc/history file
-  */
-static void
-dlg_read_history (WDialog * h)
-{
-    char *profile;
-    ev_history_load_save_t event_data;
-
-    if (num_history_items_recorded == 0)        /* this is how to disable */
-        return;
-
-    profile = mc_config_get_full_path (MC_HISTORY_FILE);
-    event_data.cfg = mc_config_init (profile, TRUE);
-    event_data.receiver = NULL;
-
-    /* create all histories in dialog */
-    mc_event_raise (h->event_group, MCEVENT_HISTORY_LOAD, &event_data);
-
-    mc_config_deinit (event_data.cfg);
-    g_free (profile);
-}
-
-/* --------------------------------------------------------------------------------------------- */
 
 static void
 refresh_cmd (void)
@@ -469,6 +445,31 @@ do_refresh (void)
         for (; d != NULL; d = g_list_previous (d))
             widget_draw (WIDGET (d->data));
     }
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+/**
+  * Read histories from the ${XDG_CACHE_HOME}/mc/history file
+  */
+void
+dlg_read_history (WDialog * h)
+{
+    char *profile;
+    ev_history_load_save_t event_data;
+
+    if (num_history_items_recorded == 0)        /* this is how to disable */
+        return;
+
+    profile = mc_config_get_full_path (MC_HISTORY_FILE);
+    event_data.cfg = mc_config_init (profile, TRUE);
+    event_data.receiver = NULL;
+
+    /* create all histories in dialog */
+    mc_event_raise (h->event_group, MCEVENT_HISTORY_LOAD, &event_data);
+
+    mc_config_deinit (event_data.cfg);
+    g_free (profile);
 }
 
 /* --------------------------------------------------------------------------------------------- */

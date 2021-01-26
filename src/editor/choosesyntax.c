@@ -84,7 +84,7 @@ exec_edit_syntax_dialog (const GPtrArray * names, const char *current_syntax)
         name = g_ptr_array_index (names, i);
         LISTBOX_APPEND_TEXT (syntaxlist, 0, name, NULL, FALSE);
         if (current_syntax != NULL && strcmp (name, current_syntax) == 0)
-            listbox_select_entry (syntaxlist->list, i + N_DFLT_ENTRIES);
+            listbox_select_entry (LISTBOX (syntaxlist->list), i + N_DFLT_ENTRIES);
     }
 
     return run_listbox (syntaxlist);

@@ -293,10 +293,11 @@ static const global_keymap_ini_t default_listbox_keymap[] = {
     {"Bottom", "end; alt-gt; c1"},
     {"PageUp", "pgup; alt-v"},
     {"PageDown", "pgdn; ctrl-v"},
-    {"Delete", "delete; d"},
-    {"Clear", "shift-delete; shift-d"},
+    {"Delete", "delete"},
+    {"Clear", "shift-delete"},
     {"View", "f3"},
     {"Edit", "f4"},
+    {"MultiSearch", "alt-space; ctrl-space"},
     {"Enter", "enter"},
     {NULL, NULL}
 };

@@ -155,7 +155,8 @@ file_history_create_item (history_descriptor_t * hd, void *data)
     width = str_term_width1 (fhd->file_name);
     hd->max_width = MAX (width, hd->max_width);
 
-    listbox_add_item (hd->listbox, LISTBOX_APPEND_AT_END, 0, fhd->file_name, fhd->file_pos, TRUE);
+    listbox_add_item (LISTBOX (hd->listbox), LISTBOX_APPEND_AT_END, 0, fhd->file_name,
+                      fhd->file_pos, TRUE);
     /* fhd->file_pos is not copied, NULLize it to prevent double free */
     fhd->file_pos = NULL;
 }

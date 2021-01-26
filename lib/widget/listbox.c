@@ -77,7 +77,8 @@ listbox_entry_free (void *data)
 {
     WLEntry *e = data;
 
-    g_free (e->text);
+    if (e->free_text)
+        g_free (e->text);
     if (e->free_data)
         g_free (e->data);
     g_free (e);
@@ -358,6 +359,20 @@ listbox_key (WListbox * l, int key)
 
 /* --------------------------------------------------------------------------------------------- */
 
+/* When called via g_queue_foreach it assigns the index field with an incremented int. */
+static void
+listbox_foreach_apply_index (gpointer data, gpointer user_data)
+{
+    WLEntry *e = data;
+    int *cur_idx = user_data;
+
+    /* Set the index and increment it. */
+    e->index = *cur_idx;
+    *cur_idx = *cur_idx + 1;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
 /* Listbox item adding function */
 static inline void
 listbox_append_item (WListbox * l, WLEntry * e, listbox_append_t pos)
@@ -445,7 +460,7 @@ listbox_destroy (WListbox * l)
 
 /* --------------------------------------------------------------------------------------------- */
 
-static cb_ret_t
+cb_ret_t
 listbox_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *data)
 {
     WListbox *l = LISTBOX (w);
@@ -544,28 +559,36 @@ listbox_mouse_callback (Widget * w, mouse_msg_t msg, mouse_event_t * event)
 /*** public functions ****************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 
-WListbox *
-listbox_new (int y, int x, int height, int width, gboolean deletable, lcback_fn callback)
+void
+listbox_init (WListbox * l, int y, int x, int height, int width, gboolean deletable,
+              lcback_fn callback)
 {
-    WListbox *l;
-    Widget *w;
+    Widget *w = WIDGET (l);
 
     if (height <= 0)
         height = 1;
 
-    l = g_new (WListbox, 1);
-    w = WIDGET (l);
     widget_init (w, y, x, height, width, listbox_callback, listbox_mouse_callback);
-    w->options |= WOP_SELECTABLE | WOP_WANT_HOTKEY;
+    w->options |= WOP_SELECTABLE;
     w->keymap = listbox_map;
 
     l->list = NULL;
-    l->top = l->pos = 0;
+    l->top = l->pos = l->virtual_pos = 0;
     l->deletable = deletable;
     l->callback = callback;
     l->allow_duplicates = TRUE;
     l->scrollbar = !mc_global.tty.slow_terminal;
+}
 
+/* --------------------------------------------------------------------------------------------- */
+
+WListbox *
+listbox_new (int y, int x, int height, int width, gboolean deletable, lcback_fn callback)
+{
+    WListbox *l;
+
+    l = g_new (WListbox, 1);
+    listbox_init (l, y, x, height, width, deletable, callback);
     return l;
 }
 
@@ -648,12 +671,18 @@ listbox_select_last (WListbox * l)
 void
 listbox_select_entry (WListbox * l, int dest)
 {
+    WLEntry *e;
     GList *le;
     int pos;
     gboolean top_seen = FALSE;
 
     if (listbox_is_empty (l) || dest < 0)
+    {
+        /* Reset position to a minimal one. */
+        l->pos = 0;
+        l->virtual_pos = 0;
         return;
+    }
 
     /* Special case */
     for (pos = 0, le = g_queue_peek_head_link (l->list); le != NULL; pos++, le = g_list_next (le))
@@ -673,6 +702,12 @@ listbox_select_entry (WListbox * l, int dest)
                 if (l->pos - l->top >= lines)
                     l->top = l->pos - lines + 1;
             }
+            /*
+             * Set the virtual position, i.e.: a position in the initial, unfiltered list if the
+             * same element would be selected.
+             */
+            e = LENTRY (le->data);
+            l->virtual_pos = e->index;
             return;
         }
     }
@@ -701,7 +736,7 @@ listbox_get_current (WListbox * l, char **string, void **extra)
     if (l != NULL)
         e = listbox_get_nth_item (l, l->pos);
 
-    ok = (e != NULL);
+    ok = (e != NULL && e->index != -2);
 
     if (string != NULL)
         *string = ok ? e->text : NULL;
@@ -720,7 +755,7 @@ listbox_get_nth_item (const WListbox * l, int pos)
         GList *item;
 
         item = g_queue_peek_nth_link (l->list, (guint) pos);
-        if (item != NULL)
+        if (item != NULL && LENTRY (item->data)->index != -2)
             return LENTRY (item->data);
     }
 
@@ -802,6 +837,20 @@ listbox_remove_list (WListbox * l)
 
 /* --------------------------------------------------------------------------------------------- */
 
+/*
+ * Initializes the listbox elements with their position index. This allows to alter (filter, in
+ * particular) the listbox elements order and still get the original index (when selecting an
+ * element).
+ */
+void
+listbox_init_indices (WListbox * l)
+{
+    int index = 0;
+    g_queue_foreach (l->list, listbox_foreach_apply_index, &index);
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
 char *
 listbox_add_item (WListbox * l, listbox_append_t pos, int hotkey, const char *text, void *data,
                   gboolean free_data)
@@ -815,7 +864,9 @@ listbox_add_item (WListbox * l, listbox_append_t pos, int hotkey, const char *te
         return NULL;
 
     entry = g_new (WLEntry, 1);
+    entry->index = -1;          /* Will be initialized when switching to the filter state */
     entry->text = g_strdup (text);
+    entry->free_text = 1;
     entry->data = data;
     entry->free_data = free_data;
     entry->hotkey = hotkey;

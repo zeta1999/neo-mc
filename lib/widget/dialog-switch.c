@@ -241,7 +241,8 @@ dialog_switch_list (void)
         else
             title = g_strdup ("");
 
-        listbox_add_item (listbox->list, LISTBOX_APPEND_BEFORE, get_hotkey (i++), title, h, FALSE);
+        listbox_add_item (LISTBOX (listbox->list), LISTBOX_APPEND_BEFORE, get_hotkey (i++), title,
+                          h, FALSE);
 
         g_free (title);
     }

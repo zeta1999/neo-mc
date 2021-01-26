@@ -66,44 +66,53 @@ typedef struct
 /*** file scope functions ************************************************************************/
 
 static cb_ret_t
-history_dlg_reposition (WDialog * dlg_head)
+history_dlg_reposition (WDialog * dlg_head, WRect * resize)
 {
-    history_dlg_data *data;
-    int x = 0, y, he, wi;
     WRect r;
 
-    /* guard checks */
-    if ((dlg_head == NULL) || (dlg_head->data == NULL))
-        return MSG_NOT_HANDLED;
-
-    data = (history_dlg_data *) dlg_head->data;
-
-    y = data->y;
-    he = data->count + 2;
-
-    if (he <= y || y > (LINES - 6))
+    if (resize == NULL)
     {
-        he = MIN (he, y - 1);
-        y -= he;
+        history_dlg_data *data;
+        int x = 0, y, he, wi;
+
+        /* guard checks */
+        if ((dlg_head == NULL) || (dlg_head->data == NULL))
+            return MSG_NOT_HANDLED;
+
+        data = (history_dlg_data *) dlg_head->data;
+
+        y = data->y;
+        he = data->count + 2;
+
+        if (he <= y || y > (LINES - 6))
+        {
+            he = MIN (he, y - 1);
+            y -= he;
+        }
+        else
+        {
+            y++;
+            he = MIN (he, LINES - y);
+        }
+
+        if (data->x > 2)
+            x = data->x - 2;
+
+        wi = data->max_width + 4;
+
+        if ((wi + x) > COLS)
+        {
+            wi = MIN (wi, COLS);
+            x = COLS - wi;
+        }
+        rect_init (&r, y, x, he, wi);
     }
     else
     {
-        y++;
-        he = MIN (he, LINES - y);
+        /* A resize from some other code (currently from the listbox filter). */
+        r = *resize;
     }
 
-    if (data->x > 2)
-        x = data->x - 2;
-
-    wi = data->max_width + 4;
-
-    if ((wi + x) > COLS)
-    {
-        wi = MIN (wi, COLS);
-        x = COLS - wi;
-    }
-
-    rect_init (&r, y, x, he, wi);
 
     return dlg_default_callback (WIDGET (dlg_head), NULL, MSG_RESIZE, 0, &r);
 }
@@ -116,7 +125,7 @@ history_dlg_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, v
     switch (msg)
     {
     case MSG_RESIZE:
-        return history_dlg_reposition (DIALOG (w));
+        return history_dlg_reposition (DIALOG (w), data);
 
     case MSG_NOTIFY:
         {
@@ -158,7 +167,7 @@ history_create_item (history_descriptor_t * hd, void *data)
     width = str_term_width1 (text);
     hd->max_width = MAX (width, hd->max_width);
 
-    listbox_add_item (hd->listbox, LISTBOX_APPEND_AT_END, 0, text, NULL, TRUE);
+    listbox_add_item (LISTBOX (hd->listbox), LISTBOX_APPEND_AT_END, 0, text, NULL, TRUE);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -190,7 +199,7 @@ history_descriptor_init (history_descriptor_t * hd, int y, int x, GList * histor
     hd->action = CK_IgnoreKey;
     hd->text = NULL;
     hd->max_width = 0;
-    hd->listbox = listbox_new (1, 1, 2, 2, TRUE, NULL);
+    hd->listbox = filtering_listbox_new (1, 1, 2, 2, TRUE, NULL, FILT_LIST_KEEP_DIALOG_SIZE);
     /* in most cases history list contains string only and no any other data */
     hd->create = history_create_item;
     hd->release = history_release_item;
@@ -205,6 +214,7 @@ history_show (history_descriptor_t * hd)
     GList *z, *hi;
     size_t count;
     WDialog *query_dlg;
+    WListbox *lw;
     history_dlg_data hist_data;
     int dlg_ret;
 
@@ -217,7 +227,9 @@ history_show (history_descriptor_t * hd)
         hd->create (hd, z->data);
     /* after this, the order of history items is following: recent at begin, oldest at end */
 
-    count = listbox_get_length (hd->listbox);
+    /* Get the WListbox pointer for convenience. */
+    lw = LISTBOX (hd->listbox);
+    count = listbox_get_length (lw);
 
     hist_data.y = hd->y;
     hist_data.x = hd->x;
@@ -244,17 +256,17 @@ history_show (history_descriptor_t * hd)
     {
         /* history is above base widget -- revert order to place recent item at bottom */
         /* revert history direction */
-        g_queue_reverse (hd->listbox->list);
+        g_queue_reverse (lw->list);
         if (hd->current < 0 || (size_t) hd->current >= count)
-            listbox_select_last (hd->listbox);
+            listbox_select_last (lw);
         else
-            listbox_select_entry (hd->listbox, count - 1 - (size_t) hd->current);
+            listbox_select_entry (lw, count - 1 - (size_t) hd->current);
     }
     else
     {
         /* history is below base widget -- keep order to place recent item on top  */
         if (hd->current > 0)
-            listbox_select_entry (hd->listbox, hd->current);
+            listbox_select_entry (lw, hd->current);
     }
 
     dlg_ret = dlg_run (query_dlg);
@@ -274,13 +286,18 @@ history_show (history_descriptor_t * hd)
             hd->action = CK_Enter;
         }
 
-        listbox_get_current (hd->listbox, &q, NULL);
-        hd->text = g_strdup (q);
+        listbox_get_current (lw, &q, NULL);
+        /* Can still be 0 if special entry "<no search results>" will be selected. */
+        if (q != NULL)
+            hd->text = g_strdup (q);
     }
+
+    /* If needed, restore normal listbox state, with no backlist (list_keep). */
+    filt_listbox_ensure_unfiltered_state (hd->listbox);
 
     /* get modified history from dialog */
     z = NULL;
-    for (hi = listbox_get_first_link (hd->listbox); hi != NULL; hi = g_list_next (hi))
+    for (hi = listbox_get_first_link (lw); hi != NULL; hi = g_list_next (hi))
         /* history is being reverted here again */
         z = g_list_prepend (z, hd->release (hd, LENTRY (hi->data)));
 

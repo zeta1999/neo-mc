@@ -749,15 +749,20 @@ group_add_widget_autopos (WGroup * g, void *w, widget_pos_flags_t pos_flags, con
  * @param w Widget object
  */
 void
-group_remove_widget (void *w)
+group_remove_widget (void *wid)
 {
+    Widget *w = WIDGET (wid);
     WGroup *g;
     GList *d;
 
     /* Don't accept NULL widget. This shouldn't happen */
     assert (w != NULL);
 
-    g = WIDGET (w)->owner;
+    /* Invoke widget's pre unlink callback. */
+    if (w->pre_unlink_func != NULL)
+        w->pre_unlink_func (w);
+
+    g = w->owner;
 
     d = g_list_find (g->widgets, w);
     if (d == g->current)
@@ -774,7 +779,7 @@ group_remove_widget (void *w)
         group_select_current_widget (g);
     }
 
-    WIDGET (w)->owner = NULL;
+    w->owner = NULL;
 }
 
 /* --------------------------------------------------------------------------------------------- */

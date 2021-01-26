@@ -11,7 +11,7 @@
 /* forward declarations */
 struct history_descriptor_t;
 struct WLEntry;
-struct WListbox;
+typedef struct WFilteringListbox_s WFilteringListbox;
 
 typedef void (*history_create_item_func) (struct history_descriptor_t * hd, void *data);
 typedef void *(*history_release_item_func) (struct history_descriptor_t * hd, struct WLEntry * le);
@@ -30,7 +30,7 @@ typedef struct history_descriptor_t
     char *text;                 /**< return text of selected item */
 
     size_t max_width;           /**< maximum width of sring in history */
-    struct WListbox *listbox;   /**< listbox widget to draw history */
+    WFilteringListbox *listbox;   /**< listbox widget to draw history */
 
     history_create_item_func create;    /**< function to create item of @list */
     history_release_item_func release;  /**< function to release item of @list */
