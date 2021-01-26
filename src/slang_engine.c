@@ -42,10 +42,10 @@
 #include "lib/fileloc.h"
 #include "lib/widget.h"
 #include "lib/widget/wtools.h"
-#include "lib/util.h"
+#include "lib/sub-util.h"
 
 #include "src/slang_engine.h"
-#include "src/filemanager/dir.h"
+#include "src/filemanager/fman-dir.h"
 
 /*** global variables ****************************************************************************/
 

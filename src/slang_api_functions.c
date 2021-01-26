@@ -38,7 +38,7 @@
 
 #include "lib/global.h"
 #include "lib/widget.h"
-#include "lib/util.h"
+#include "lib/sub-util.h"
 
 #include "src/slang_engine.h"
 #include "src/slang_api_functions.h"
