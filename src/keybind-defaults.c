@@ -478,6 +478,8 @@ static const global_keymap_ini_t default_editor_keymap[] = {
     {"Sort", "alt-t"},
     {"Mail", "alt-m"},
     {"ExternalCommand", "alt-u"},
+    {"WindowCascade", "ctrl-alt-c"},
+    {"WindowTile", "ctrl-alt-t"},
 #ifdef HAVE_ASPELL
     {"SpellCheckCurrentWord", "ctrl-p"},
 #endif

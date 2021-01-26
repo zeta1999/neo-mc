@@ -293,6 +293,119 @@ get_hotkey (int n)
 
 /* --------------------------------------------------------------------------------------------- */
 
+static gboolean
+edit_window_leave_fullscreen_resize (Widget * w, int y, int x, int lines, int cols)
+{
+    gboolean ret = FALSE;
+
+    if (edit_widget_is_editor (w))
+    {
+        WEdit *e = (WEdit *) w;
+        WRect resize_rect;
+        if (e->fullscreen)
+            edit_toggle_fullscreen (e);
+        rect_init (&resize_rect, y, x, lines, cols);
+        e->force |= REDRAW_COMPLETELY;
+        send_message (WIDGET (e), NULL, MSG_RESIZE, 0, &resize_rect);
+        ret = TRUE;
+    }
+    return ret;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+static void
+edit_window_cascade (const WDialog * h)
+{
+    const WGroup *g = CONST_GROUP (h);
+    const Widget *wid = CONST_WIDGET (h);
+    int diff = 5;
+    int cur_y, cur_x, lines, cols;
+    GList *w;
+
+    cur_x = 0;
+    cur_y = 1;
+    lines = wid->lines - 2;
+    cols = wid->cols;
+
+    for (w = g->widgets; w != NULL; w = g_list_next (w))
+    {
+        if (w == g->current)
+            continue;
+        if (edit_window_leave_fullscreen_resize (WIDGET (w->data), cur_y, cur_x, lines, cols))
+        {
+            cur_y += diff;
+            cur_x += diff;
+            lines -= diff;
+            cols -= diff;
+            /* Underflow – cycle back to the first size and position. */
+            if (lines < 7 || cols < 30)
+            {
+                /* Second and following series are more dense. */
+                diff -= diff > 1 ? 1 : 0;
+                /* Use a little degrading shift for the next series of windows. */
+                cur_x = 0 + diff - 1;
+                cur_y = 1 + diff - 1;   /* 1 + ... is for top bar */
+                lines = wid->lines - diff - 1;  /* not -1 - diff + 1, because of bottom bar */
+                cols = wid->cols - diff + 1;    /* cur_x is diff - 1, decrease by that value */
+            }
+        }
+    }
+    w = g->current;
+    edit_window_leave_fullscreen_resize (WIDGET (w->data), cur_y, cur_x, lines, cols);
+    repaint_screen ();
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+static void
+edit_window_tile (const WDialog * h)
+{
+    const WGroup *g = CONST_GROUP (h);
+    const Widget *wid = CONST_WIDGET (h);
+    const size_t offset = 3;    /* skip menu and buttonbar */
+    int cur_y, orig_lines, lines, dlg_num;
+    GList *w;
+
+    dlg_num = g_list_length (g->widgets) - offset;
+
+    cur_y = 1;
+    lines = wid->lines / dlg_num;
+    if (lines < 5)
+        lines = 5;
+    orig_lines = lines;
+
+    for (w = g->widgets; w != NULL; w = g_list_next (w))
+    {
+        if (w == g->current)
+            continue;
+        /* Detect overflow and use space for final window (in series). */
+        if (cur_y + 2 * orig_lines - 1 > wid->lines)
+            lines = wid->lines - cur_y - 1;
+
+        /* Resize and unfullscreen window. */
+        if (edit_window_leave_fullscreen_resize (WIDGET (w->data), cur_y, 0, lines, wid->cols))
+        {
+            cur_y += orig_lines;
+            /* Overflow - cycle back to the first size and position. */
+            if (cur_y + orig_lines - 1 > wid->lines)
+            {
+                cur_y = 1;
+                lines = orig_lines;
+            }
+        }
+    }
+
+    /* Ensure that the currently edited file is positioned last. */
+    w = g->current;
+    if (cur_y + orig_lines > wid->lines - 1)
+        lines = wid->lines - cur_y - 1;
+    edit_window_leave_fullscreen_resize (WIDGET (w->data), cur_y, 0, lines, wid->cols);
+    repaint_screen ();
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
 static void
 edit_window_list (const WDialog * h)
 {
@@ -463,6 +576,12 @@ edit_dialog_command_execute (WDialog * h, long command)
         break;
     case CK_WindowList:
         edit_window_list (h);
+        break;
+    case CK_WindowCascade:
+        edit_window_cascade (h);
+        break;
+    case CK_WindowTile:
+        edit_window_tile (h);
         break;
     case CK_WindowNext:
         group_select_next_widget (g);
@@ -1271,6 +1390,15 @@ edit_files (const GList * files)
                                 f->line_number);
         /* at least one file has been opened succefully */
         ok = ok || f_ok;
+    }
+
+    if (mc_args__cascade)
+    {
+        edit_window_cascade (edit_dlg);
+    }
+    else if (mc_args__tile)
+    {
+        edit_window_tile (edit_dlg);
     }
 
     if (ok)

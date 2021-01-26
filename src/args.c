@@ -46,6 +46,9 @@
 
 /*** global variables ****************************************************************************/
 
+gboolean mc_args__cascade = FALSE;
+gboolean mc_args__tile = FALSE;
+
 /* If true, assume we are running on an xterm terminal */
 gboolean mc_args__force_xterm = FALSE;
 
@@ -177,6 +180,23 @@ static const GOptionEntry argument_main_table[] = {
      N_("<integer>")
     },
 #endif /* ENABLE_VFS_SMB */
+
+#ifdef USE_INTERNAL_EDIT
+    /* options for non-fullscreen mcedit startup */
+    {
+     "cascade", 'w', G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_NONE,
+     &mc_args__cascade,
+     N_("Start editor with windows arranged in cascade"),
+     NULL
+    },
+
+    {
+     "tile", 'T', G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_NONE,
+     &mc_args__tile,
+     N_("Start editor with windows tiled"),
+     NULL
+    },
+#endif
 
     {
      /* handle arguments manually */
