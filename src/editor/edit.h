@@ -47,6 +47,7 @@ extern int option_save_mode;
 extern gboolean option_save_position;
 extern gboolean option_syntax_highlighting;
 extern gboolean option_group_undo;
+extern gboolean option_completion_collect_other_files;
 extern char *option_backup_ext;
 extern char *option_filesize_threshold;
 extern char *option_stop_format_chars;
