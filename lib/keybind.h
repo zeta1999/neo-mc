@@ -300,6 +300,8 @@ enum
     CK_WindowList,
     CK_WindowNext,
     CK_WindowPrev,
+    CK_WindowCascade,
+    CK_WindowTile,
     /* misc commands */
     CK_SpellCheck,
     CK_SpellCheckCurrentWord,

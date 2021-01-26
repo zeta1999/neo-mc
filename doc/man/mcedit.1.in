@@ -54,6 +54,12 @@ Display the version of the program.
 .I "\-x"
 Force xterm mode.  Used when running on xterm\-capable terminals (two
 screen modes, and able to send mouse escape sequences).
+.TP
+.I "\-w/\-\-cascade"
+Start with file windows arranged in cascade (not fullscreen).
+.TP
+.I "\-T/\-\-tile"
+Start with file windows tiled (not fullscreen).
 .SH FEATURES
 The internal file editor is a full\-featured windowed editor.  It can
 edit several files at the same time. Maximum size of each file is 64

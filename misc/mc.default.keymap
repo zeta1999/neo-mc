@@ -386,6 +386,8 @@ SpellCheckCurrentWord = ctrl-p
 # WindowList =
 # WindowNext =
 # WindowPrev =
+WindowCascade = ctrl-alt-c
+WindowTile = ctrl-alt-t
 # ExtendedKeyMap =
 
 [viewer]

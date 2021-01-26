@@ -341,6 +341,8 @@ static name_keymap_t command_names[] = {
     ADD_KEYMAP_NAME (WindowList),
     ADD_KEYMAP_NAME (WindowNext),
     ADD_KEYMAP_NAME (WindowPrev),
+    ADD_KEYMAP_NAME (WindowCascade),
+    ADD_KEYMAP_NAME (WindowTile),
 #endif /* USE_INTERNAL_EDIT */
 
     /* viewer */
