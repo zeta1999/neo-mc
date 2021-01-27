@@ -126,6 +126,7 @@ mc_va_log (const char *fmt, va_list args)
         if (f != NULL)
         {
             (void) vfprintf (f, fmt, args);
+            (void) fputs("\n",f);
             (void) fclose (f);
         }
         g_free (logfilename);

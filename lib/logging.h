@@ -5,6 +5,8 @@
 #ifndef MC_LOGGING_H
 #define MC_LOGGING_H
 
+#include <config.h>
+
 /*
    This file provides an easy-to-use function for writing all kinds of
    events into a central log file that can be used for debugging.
@@ -23,8 +25,13 @@
 /*** declarations of public functions ************************************************************/
 
 /* *INDENT-OFF* */
+#ifdef USE_MAINTAINER_MODE
 void mc_log (const char *fmt, ...) G_GNUC_PRINTF (1, 2);
 void mc_always_log (const char *fmt, ...) G_GNUC_PRINTF (1, 2);
+#else
+#define mc_log(x,...) do { } while(0);
+#define mc_always_log(x,...) do { } while(0);
+#endif
 /* *INDENT-ON* */
 
 /*** inline functions ****************************************************************************/
