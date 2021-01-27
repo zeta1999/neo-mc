@@ -206,7 +206,7 @@ slang_api__cure_get_left_whole_word (int skip_space)
 int
 slang_api__cure_delete (void)
 {
-    return edit_buffer_delete (&get_cure ()->buffer);
+    return edit_delete (get_cure (), 0);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -219,7 +219,7 @@ slang_api__cure_delete (void)
 int
 slang_api__cure_backspace (void)
 {
-    return edit_buffer_backspace (&get_cure ()->buffer);
+    return edit_backspace (get_cure (), 0);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -231,7 +231,7 @@ slang_api__cure_backspace (void)
 void
 slang_api__cure_insert_ahead (int c)
 {
-    edit_buffer_insert_ahead (&get_cure ()->buffer, c);
+    edit_insert_ahead (get_cure (), c);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -257,7 +257,7 @@ slang_api__listbox (int h, int w, char *title, char **items, unsigned long size)
     /* Add the requested elements to the listbox. */
     for (cur_item = items; i < size && *cur_item != NULL; i++, cur_item++)
     {
-        listbox_add_item (listb->list, LISTBOX_APPEND_AT_END, 's', *cur_item, NULL, FALSE);
+        listbox_add_item (LISTBOX(listb->list), LISTBOX_APPEND_AT_END, 's', *cur_item, NULL, FALSE);
     }
 
     /* Run the dialog and get and then return the index of the selected item. */
@@ -291,7 +291,7 @@ slang_api__listbox_with_data (int h, int w, char *title, char **items, unsigned 
     /* Add the requested elements to the listbox, also passing the associated data. */
     for (p = 0, cur_item = items; p < size && *cur_item != NULL; p++, cur_item++)
     {
-        listbox_add_item (listb->list, LISTBOX_APPEND_AT_END, 's', *cur_item, *cur_data, FALSE);
+        listbox_add_item (LISTBOX(listb->list), LISTBOX_APPEND_AT_END, 's', *cur_item, *cur_data, FALSE);
 
         /* Advance the item data pointer, respecting its size. */
         if (q < size2)
