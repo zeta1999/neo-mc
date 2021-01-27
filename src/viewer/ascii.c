@@ -149,7 +149,7 @@
 #include "lib/global.h"
 #include "lib/tty/tty.h"
 #include "lib/skin.h"
-#include "lib/sub-util.h"           /* is_printable() */
+#include "lib/sub-util.h"       /* is_printable() */
 #ifdef HAVE_CHARSET
 #include "lib/charsets.h"
 #endif

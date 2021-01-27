@@ -129,7 +129,7 @@ filt_listbox_show_multi_search_widget (WFilteringListbox * sl)
     if (l->pos < 0)
         l->pos = 0;
     if (l->pos < l->top || l->pos >= l->top + w->lines)
-        l->top = l->pos - w->lines/2 + 1;
+        l->top = l->pos - w->lines / 2 + 1;
     if (l->top < 0)
         l->top = 0;
 

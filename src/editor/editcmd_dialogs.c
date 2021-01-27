@@ -425,21 +425,21 @@ editcmd_dialog_completion_show (const WEdit * edit, int max_len, GString ** comp
 
 etags_hash_t *
 editcmd_dialog_select_tags_object_show (WEdit * edit, char *match_expr, int max_len,
-                                       etags_hash_t * all_found, etags_jump_type_t type,
-                                       int num_lines)
+                                        etags_hash_t * all_found, etags_jump_type_t type,
+                                        int num_lines)
 {
     int start_x, start_y, offset, i, selected_on_start = 0;
     gboolean found_current = FALSE;
     char *curr = NULL;
     WDialog *func_dlg;
     WListbox *func_list;
-    int func_dlg_h;              /* dialog height */
-    int func_dlg_w;              /* dialog width */
+    int func_dlg_h;             /* dialog height */
+    int func_dlg_w;             /* dialog width */
     etags_hash_t *selection_data = NULL;
 
     /* calculate the dialog metrics */
     func_dlg_h = num_lines + 2;
-    func_dlg_w = max_len >= MAX_WIDTH_DEF_DIALOG/2 ? max_len + 4 : MAX_WIDTH_DEF_DIALOG/2 + 4;
+    func_dlg_w = max_len >= MAX_WIDTH_DEF_DIALOG / 2 ? max_len + 4 : MAX_WIDTH_DEF_DIALOG / 2 + 4;
     start_x = edit->curs_col + edit->start_col - (func_dlg_w / 2) +
         EDIT_TEXT_HORIZONTAL_OFFSET + (edit->fullscreen ? 0 : 1) + option_line_state_width;
     start_y = edit->curs_row + EDIT_TEXT_VERTICAL_OFFSET + (edit->fullscreen ? 0 : 1) + 1;
@@ -459,7 +459,7 @@ editcmd_dialog_select_tags_object_show (WEdit * edit, char *match_expr, int max_
         start_y -= (offset + 1);
 
     func_dlg = dlg_create (TRUE, start_y, start_x, func_dlg_h, func_dlg_w, WPOS_KEEP_DEFAULT, TRUE,
-                          dialog_colors, NULL, NULL, "[Definitions]", match_expr);
+                           dialog_colors, NULL, NULL, "[Definitions]", match_expr);
     func_list = listbox_new (1, 1, func_dlg_h - 2, func_dlg_w - 2, FALSE, NULL);
     group_add_widget (GROUP (func_dlg), func_list);
 
@@ -473,20 +473,21 @@ editcmd_dialog_select_tags_object_show (WEdit * edit, char *match_expr, int max_
         else if (type == TAG_JUMP_KIND_MATCH_WORD)
             label =
                 g_strdup_printf ("%s -> %s:%ld", all_found[i].short_define, all_found[i].filename,
-                             all_found[i].line);
+                                 all_found[i].line);
         else
-            label = g_strdup("error");
+            label = g_strdup ("error");
         listbox_add_item (func_list, LISTBOX_APPEND_AT_END, 0, label, &all_found[i], FALSE);
         g_free (label);
 
         /* Detect currently active code segment. */
-        if ((all_found[i].line - 1) <= edit->buffer.curs_line) {
+        if ((all_found[i].line - 1) <= edit->buffer.curs_line)
+        {
             found_current = TRUE;
             selected_on_start = i;
         }
     }
     if (found_current)
-        listbox_select_entry(func_list, selected_on_start);
+        listbox_select_entry (func_list, selected_on_start);
 
     /* pop up the dialog and apply the chosen completion */
     if (dlg_run (func_dlg) == B_ENTER)

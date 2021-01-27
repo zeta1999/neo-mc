@@ -478,7 +478,7 @@ edit_buffer_find_word_start (const edit_buffer_t * buf, gboolean jump_spaces, of
  * @param initial Initial contents of the result.
  * @param release_on_empty Should the initial g_string be released when returning NULL.
  * @return g_string with the word or NULL if the word is empty.
-*/
+ */
 GString *
 edit_buffer_get_left_whole_word (const edit_buffer_t * buf, gboolean jump_spaces, GString * initial,
                                  gboolean release_on_empty)

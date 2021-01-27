@@ -29,7 +29,7 @@
 
 #include "lib/global.h"
 #include "lib/skin.h"
-#include "lib/sub-util.h"           /* is_exe() */
+#include "lib/sub-util.h"       /* is_exe() */
 #include "lib/filehighlight.h"
 #include "internal.h"
 

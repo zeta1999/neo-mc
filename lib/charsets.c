@@ -36,7 +36,7 @@
 #include "lib/global.h"
 #include "lib/strutil.h"        /* utf-8 functions */
 #include "lib/fileloc.h"
-#include "lib/sub-util.h"           /* whitespace() */
+#include "lib/sub-util.h"       /* whitespace() */
 
 #include "lib/charsets.h"
 

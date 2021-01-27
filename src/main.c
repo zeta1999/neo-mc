@@ -48,7 +48,7 @@
 #include "lib/event.h"
 #include "lib/tty/tty.h"
 #include "lib/tty/key.h"        /* For init_key() */
-#include "lib/tty/tty-mouse.h"      /* init_mouse() */
+#include "lib/tty/tty-mouse.h"  /* init_mouse() */
 #include "lib/skin.h"
 #include "lib/filehighlight.h"
 #include "lib/fileloc.h"

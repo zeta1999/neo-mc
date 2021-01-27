@@ -31,7 +31,7 @@
 #include "lib/vfs/vfs.h"        /* VFS_ENCODING_PREFIX, vfs_init(), vfs_shut() */
 #include "src/vfs/local/local.c"
 
-#include "lib/sub-util.h"           /* mc_realpath() */
+#include "lib/sub-util.h"       /* mc_realpath() */
 
 /* --------------------------------------------------------------------------------------------- */
 

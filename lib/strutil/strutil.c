@@ -32,7 +32,7 @@
 #include <ctype.h>
 
 #include "lib/global.h"
-#include "lib/sub-util.h"           /* MC_PTR_FREE */
+#include "lib/sub-util.h"       /* MC_PTR_FREE */
 #include "lib/strutil.h"
 
 /*** global variables ****************************************************************************/
@@ -1023,23 +1023,27 @@ parse_integer (const char *str, gboolean * invalid)
 
 /* --------------------------------------------------------------------------------------------- */
 
-char *str_collapse_whitespace(char *s, char overwrite_char)
+char *
+str_collapse_whitespace (char *s, char overwrite_char)
 {
-    int i, wi=0, size, span=0;
-    size=strlen(s);
+    int i, wi = 0, size, span = 0;
+    size = strlen (s);
 
     /* Skip leading whitespace. */
-    for (i=0; i<size; i++) {
-        if (!isspace(s[i]))
+    for (i = 0; i < size; i++)
+    {
+        if (!isspace (s[i]))
             break;
     }
 
     /* Collapse remaining whitespace. */
-    for (; i<size; i++) {
-        if (isspace(s[i])) // == ' ')
-            span=1;
-        else {
-            if(span)
+    for (; i < size; i++)
+    {
+        if (isspace (s[i]))     // == ' ')
+            span = 1;
+        else
+        {
+            if (span)
                 s[wi++] = overwrite_char;
 
             s[wi++] = s[i];
@@ -1047,7 +1051,7 @@ char *str_collapse_whitespace(char *s, char overwrite_char)
         }
     }
 
-    s[wi]='\0';
+    s[wi] = '\0';
 
     return s;
 }

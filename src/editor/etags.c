@@ -38,7 +38,7 @@
 #include <ctype.h>
 
 #include "lib/global.h"
-#include "lib/sub-util.h"           /* canonicalize_pathname() */
+#include "lib/sub-util.h"       /* canonicalize_pathname() */
 #include "lib/fileloc.h"
 #include "lib/strutil.h"
 
@@ -56,7 +56,8 @@
 /* --------------------------------------------------------------------------------------------- */
 
 int
-etags_locate_tags_file(char **tagfile_return, char **path_return) {
+etags_locate_tags_file (char **tagfile_return, char **path_return)
+{
     char *tagfile = *tagfile_return, *path = *path_return, *ptr = NULL;
     int search_result = 0;
 
@@ -68,7 +69,8 @@ etags_locate_tags_file(char **tagfile_return, char **path_return) {
         path = ptr;
         g_free (tagfile);
         tagfile = mc_build_filename (path, TAGS_NAME, (char *) NULL);
-        if (exist_file (tagfile)) {
+        if (exist_file (tagfile))
+        {
             search_result = 1;
             break;
         }
@@ -198,10 +200,10 @@ parse_define (const char *buf, char **long_name, char **short_name, long *line)
 /* --------------------------------------------------------------------------------------------- */
 
 /* Fills the etags info array with ·all· objects of given ·type· (functions, etc.) */
-int etags_get_objects_for_file (etags_rank_t type, const char *tagfile,
+int
+etags_get_objects_for_file (etags_rank_t type, const char *tagfile,
                             const char *start_path, const char *match_filename,
-                            etags_hash_t * functions_hash,
-                            int *max_len_return, int size_limit)
+                            etags_hash_t * functions_hash, int *max_len_return, int size_limit)
 {
     /* *INDENT-OFF* */
     enum
@@ -268,65 +270,69 @@ int etags_get_objects_for_file (etags_rank_t type, const char *tagfile,
 
                     /* Prepare the work variable. */
                     char *longname_wr;
-                    longname_wr = g_strdup(longname);
+                    longname_wr = g_strdup (longname);
 
                     /* Function – if there's '(' in the declaration. */
-                    can_be_func = strstr(longname,"(") != NULL;
+                    can_be_func = strstr (longname, "(") != NULL;
                     /* Variable – if there's no parens and no # in the declaration. */
-                    can_be_var = strstr(g_strdelimit(longname_wr,"}{()#",''),"") == NULL;
+                    can_be_var = strstr (g_strdelimit (longname_wr, "}{()#", ''), "") == NULL;
                     /* Type – if there's a 'struct', 'typedef', 'enum' or '}' in the declaration. */
-                    can_be_type=(strstr(longname,"struct ") ||
-                                            strstr(longname,"typedef ") ||
-                                            strstr(longname,"enum ")) ||
-                                (strstr(longname, "}") &&
-                                    (g_str_has_suffix(shortname,"_t") ||
-                                        g_str_has_suffix(shortname,"_type")));
+                    can_be_type = (strstr (longname, "struct ") ||
+                                   strstr (longname, "typedef ") ||
+                                   strstr (longname, "enum ")) ||
+                        (strstr (longname, "}") &&
+                         (g_str_has_suffix (shortname, "_t") ||
+                          g_str_has_suffix (shortname, "_type")));
                     /* Other kind – nor any of the above. */
                     is_other = !can_be_func && !can_be_var && !can_be_type;
 
                     /* Renew the work variable. */
-                    g_free(longname_wr);
-                    longname_wr = g_strdup(longname);
+                    g_free (longname_wr);
+                    longname_wr = g_strdup (longname);
 
                     /* A closer examination of type tags. */
-                    if (type == TAG_RANK_TYPES && can_be_type && !can_be_func) {
+                    if (type == TAG_RANK_TYPES && can_be_type && !can_be_func)
+                    {
                         /*
                          * Verify if it's not a struct variable or an enum.
                          * It filters out occurrences such as:
                          * – struct type SHORTNAME … – i.e.: the shortname at 3rd position, because
                          *   this means that a struct variable, not a struct type is being defined.
                          */
-                        gchar **words = g_strsplit(str_collapse_whitespace(longname_wr, ' ')," ", -1);
-                        if (words[2] && strcmp(words[2], shortname) == 0)
+                        gchar **words =
+                            g_strsplit (str_collapse_whitespace (longname_wr, ' '), " ", -1);
+                        if (words[2] && strcmp (words[2], shortname) == 0)
                             can_be_type = FALSE;
-                        g_strfreev(words);
+                        g_strfreev (words);
                     }
 
                     /* A closer examination of variable tags. */
-                    if (type == TAG_RANK_VARIABLES && can_be_var) {
+                    if (type == TAG_RANK_VARIABLES && can_be_var)
+                    {
                         /* Verify if it's not a struct typedef or an enum. */
-                        gchar **words = g_strsplit(str_collapse_whitespace(longname_wr, ' ')," ", -1);
-                        if (strcmp(words[0], "typedef") == 0 || !words[0] || !words[1])
+                        gchar **words =
+                            g_strsplit (str_collapse_whitespace (longname_wr, ' '), " ", -1);
+                        if (strcmp (words[0], "typedef") == 0 || !words[0] || !words[1])
                             can_be_var = FALSE;
                         /* Most probably an enum ENUM = 0|1|… assignment. */
-                        if (!words[0] || strstr(words[0], "=") || (words[1] && words[1][0] == '='))
+                        if (!words[0] || strstr (words[0], "=") || (words[1] && words[1][0] == '='))
                             can_be_var = FALSE;
-                        g_strfreev(words);
+                        g_strfreev (words);
                     }
 
                     /* Free the work variable. */
-                    g_free(longname_wr);
+                    g_free (longname_wr);
 
                     /* Is the object of the requested type? */
                     if (type == TAG_RANK_ANY ||
                         ((type == TAG_RANK_FUNCTIONS && can_be_func) ||
-                            (type == TAG_RANK_VARIABLES && can_be_var) ||
-                            (type == TAG_RANK_TYPES && can_be_type) ||
-                            (type == TAG_RANK_OTHER && is_other)))
+                         (type == TAG_RANK_VARIABLES && can_be_var) ||
+                         (type == TAG_RANK_TYPES && can_be_type) ||
+                         (type == TAG_RANK_OTHER && is_other)))
                     {
                         /* Update the max. length return variable */
                         int max_len_candidate;
-                        max_len_candidate = strlen(shortname);
+                        max_len_candidate = strlen (shortname);
                         if (*max_len_return < max_len_candidate)
                             *max_len_return = max_len_candidate;
 

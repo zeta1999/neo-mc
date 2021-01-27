@@ -42,7 +42,7 @@
 #include "lib/strutil.h"
 #include "lib/fileloc.h"        /* MC_HISTORY_FILE */
 #include "lib/event.h"          /* mc_event_raise() */
-#include "lib/sub-util.h"           /* MC_PTR_FREE */
+#include "lib/sub-util.h"       /* MC_PTR_FREE */
 #include "lib/mcconfig.h"       /* num_history_items_recorded */
 
 #include "lib/widget.h"

@@ -10,7 +10,7 @@
 #ifndef MC__WIDGET_MOUSE_H
 #define MC__WIDGET_MOUSE_H
 
-#include "lib/tty/tty-mouse.h"      /* Gpm_Event */
+#include "lib/tty/tty-mouse.h"  /* Gpm_Event */
 
 /*** enums ***************************************************************************************/
 

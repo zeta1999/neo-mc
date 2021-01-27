@@ -38,7 +38,7 @@
 
 #include "lib/global.h"
 #include "lib/strutil.h"        /* str_term_width1() */
-#include "lib/sub-util.h"           /* tilde_expand() */
+#include "lib/sub-util.h"       /* tilde_expand() */
 #include "lib/widget.h"
 
 /*** global variables ****************************************************************************/

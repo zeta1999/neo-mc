@@ -72,7 +72,7 @@
 
 #include "src/setup.h"
 #ifdef ENABLE_BACKGROUND
-#include "src/task-background.h"     /* do_background() */
+#include "src/task-background.h"        /* do_background() */
 #endif
 
 /* Needed for other_panel and WTree */

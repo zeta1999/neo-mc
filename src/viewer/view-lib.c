@@ -41,7 +41,7 @@
 #include "lib/global.h"
 #include "lib/vfs/vfs.h"
 #include "lib/strutil.h"
-#include "lib/sub-util.h"           /* save_file_position() */
+#include "lib/sub-util.h"       /* save_file_position() */
 #include "lib/widget.h"
 #ifdef HAVE_CHARSET
 #include "lib/charsets.h"

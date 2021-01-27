@@ -41,7 +41,7 @@
 #include "lib/global.h"
 
 #include "lib/vfs/utilvfs.h"    /* vfs_parse_ls_lga() */
-#include "lib/sub-util.h"           /* string_perm() */
+#include "lib/sub-util.h"       /* string_perm() */
 #include "lib/timefmt.h"        /* FMT_LOCALTIME */
 #include "lib/widget.h"         /* for the prototype of message() only */
 

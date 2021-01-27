@@ -30,7 +30,7 @@
 #include "lib/event.h"
 
 #ifdef ENABLE_BACKGROUND
-#include "task-background.h"         /* (background_parent_call), background_parent_call_string() */
+#include "task-background.h"    /* (background_parent_call), background_parent_call_string() */
 #endif /* ENABLE_BACKGROUND */
 #include "clipboard.h"          /* clipboard events */
 #include "execute.h"            /* execute_suspend() */

@@ -34,7 +34,7 @@
 #include "lib/strutil.h"
 #include "lib/search.h"
 #include "lib/strescape.h"
-#include "lib/sub-util.h"           /* MC_PTR_FREE */
+#include "lib/sub-util.h"       /* MC_PTR_FREE */
 
 #include "internal.h"
 

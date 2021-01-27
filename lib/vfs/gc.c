@@ -43,7 +43,7 @@
 
 #include "lib/global.h"
 #include "lib/event.h"
-#include "lib/sub-util.h"           /* MC_PTR_FREE */
+#include "lib/sub-util.h"       /* MC_PTR_FREE */
 
 #include "vfs.h"
 #include "utilvfs.h"

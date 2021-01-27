@@ -53,7 +53,7 @@
 #include "lib/strutil.h"        /* utf string functions */
 #include "lib/fileloc.h"
 #include "lib/lock.h"
-#include "lib/sub-util.h"           /* tilde_expand() */
+#include "lib/sub-util.h"       /* tilde_expand() */
 #include "lib/vfs/vfs.h"
 #include "lib/widget.h"
 #include "lib/event.h"          /* mc_event_raise() */
@@ -3496,16 +3496,20 @@ edit_load_back_cmd (WEdit * edit)
 /* --------------------------------------------------------------------------------------------- */
 
 void
-edit_select_object_from_tags(WEdit * edit, etags_jump_type_t type)
+edit_select_object_from_tags (WEdit * edit, etags_jump_type_t type)
 {
     int i, num_obj = 0, max_len;
 
     /* Group 0-initialized pointers into a struct for easy initialization. */
-    struct {
-        const char *fname0; char *fname, *tagfile, *path, *ptr;
+    struct
+    {
+        const char *fname0;
+        char *fname, *tagfile, *path, *ptr;
         GString *match_expr;
         etags_hash_t found_func[MAX_TAG_OBJECTS], *selected_object;
-    } var = {0};
+    } var =
+    {
+    0};
 
     /* No file means no entries in tags file → exit. */
     if (edit->filename_vpath == NULL)
@@ -3517,54 +3521,71 @@ edit_select_object_from_tags(WEdit * edit, etags_jump_type_t type)
     g_free (var.ptr);
 
     /* Locate the tags file and its directory.  */
-    etags_locate_tags_file(&var.tagfile, &var.path);
+    etags_locate_tags_file (&var.tagfile, &var.path);
 
     if (!var.tagfile)
         goto exit_jump_tag_obj;
 
-    if (type >= TAG_JUMP_KIND_FUNCTION_LIST && type <= TAG_JUMP_KIND_ANY_LIST) {
+    if (type >= TAG_JUMP_KIND_FUNCTION_LIST && type <= TAG_JUMP_KIND_ANY_LIST)
+    {
         /* Establish the base relative filename of current buffer. */
         var.fname0 = vfs_path_as_str (edit->filename_vpath);
-        if (g_str_has_prefix(var.fname0, var.path)) {
-            var.fname0 = var.fname0 + strlen(var.path) + 1;
-            var.fname = g_strdup(var.fname0);
-        } else
+        if (g_str_has_prefix (var.fname0, var.path))
+        {
+            var.fname0 = var.fname0 + strlen (var.path) + 1;
+            var.fname = g_strdup (var.fname0);
+        }
+        else
             /* A fallback that shouldn't be needed and is unreliable. */
-            var.fname = g_path_get_basename(var.fname0);
-        var.match_expr = g_string_new(var.fname);
-    } else if (type == TAG_JUMP_KIND_MATCH_WORD) {
+            var.fname = g_path_get_basename (var.fname0);
+        var.match_expr = g_string_new (var.fname);
+    }
+    else if (type == TAG_JUMP_KIND_MATCH_WORD)
+    {
         // The function releases the string on empty word result.
-        var.match_expr = edit_buffer_get_left_whole_word(&edit->buffer, TRUE, NULL, FALSE);
+        var.match_expr = edit_buffer_get_left_whole_word (&edit->buffer, TRUE, NULL, FALSE);
 
-        if(!var.match_expr)
+        if (!var.match_expr)
             goto exit_jump_tag_obj;
 
-    } else
+    }
+    else
         goto exit_jump_tag_obj;
 
-    if (type >= TAG_JUMP_KIND_FUNCTION_LIST && type <= TAG_JUMP_KIND_ANY_LIST) {
-        num_obj = etags_get_objects_for_file(type, var.tagfile, var.path, var.fname, (etags_hash_t *)
-                        &var.found_func, &max_len, MAX_TAG_OBJECTS);
-    } else {
+    if (type >= TAG_JUMP_KIND_FUNCTION_LIST && type <= TAG_JUMP_KIND_ANY_LIST)
+    {
+        num_obj =
+            etags_get_objects_for_file (type, var.tagfile, var.path, var.fname,
+                                        (etags_hash_t *) & var.found_func, &max_len,
+                                        MAX_TAG_OBJECTS);
+    }
+    else
+    {
         max_len = MAX_WIDTH_DEF_DIALOG;
-        num_obj = etags_set_definition_hash (var.tagfile, var.path, var.match_expr->str, (etags_hash_t *)
-&var.found_func);
+        num_obj =
+            etags_set_definition_hash (var.tagfile, var.path, var.match_expr->str,
+                                       (etags_hash_t *) & var.found_func);
     }
 
     /* Show the list. */
     if (num_obj > 0)
         var.selected_object = editcmd_dialog_select_tags_object_show (edit, var.fname, max_len,
-                                               (etags_hash_t *) & var.found_func, type, num_obj);
+                                                                      (etags_hash_t *) & var.
+                                                                      found_func, type, num_obj);
 
-    if (var.selected_object) {
+    if (var.selected_object)
+    {
         int line = var.selected_object->line;
 
         /* Move the display to the function line. */
-        if (type >= TAG_JUMP_KIND_FUNCTION_LIST && type <= TAG_JUMP_KIND_ANY_LIST) {
+        if (type >= TAG_JUMP_KIND_FUNCTION_LIST && type <= TAG_JUMP_KIND_ANY_LIST)
+        {
             edit_move_display (edit, line - WIDGET (edit)->lines / 2 - 1);
             edit_move_to_line (edit, line - 1);
             edit->force |= REDRAW_COMPLETELY;
-        } else {
+        }
+        else
+        {
             char *fullpath = var.selected_object->fullpath;
             gboolean do_moveto = FALSE;
             if (!edit->modified)
@@ -3578,7 +3599,8 @@ edit_select_object_from_tags(WEdit * edit, etags_jump_type_t type)
                 do_moveto = TRUE;
             }
 
-            if (do_moveto) {
+            if (do_moveto)
+            {
                 /* Replace the file in current editor (no new file is opened). */
                 vfs_path_free (edit_history_moveto[edit_stack_iterator].filename_vpath);
                 if (edit->dir_vpath != NULL)
@@ -3588,28 +3610,29 @@ edit_select_object_from_tags(WEdit * edit, etags_jump_type_t type)
                     edit_history_moveto[edit_stack_iterator].filename_vpath =
                         vfs_path_clone (edit->filename_vpath);
 
-                edit_history_moveto[edit_stack_iterator].line = edit->start_line + edit->curs_row + 1;
+                edit_history_moveto[edit_stack_iterator].line =
+                    edit->start_line + edit->curs_row + 1;
                 edit_stack_iterator++;
                 vfs_path_free (edit_history_moveto[edit_stack_iterator].filename_vpath);
                 edit_history_moveto[edit_stack_iterator].filename_vpath =
                     vfs_path_from_str ((char *) fullpath);
                 edit_history_moveto[edit_stack_iterator].line = line;
                 edit_reload_line (edit, edit_history_moveto[edit_stack_iterator].filename_vpath,
-                                edit_history_moveto[edit_stack_iterator].line);
+                                  edit_history_moveto[edit_stack_iterator].line);
             }
         }
     }
-exit_jump_tag_obj:
+  exit_jump_tag_obj:
     /* Clear results hash */
     for (i = 0; i < num_obj; i++)
         g_free (var.found_func[i].filename);
 
     /* Release other variables. */
-    g_free(var.fname);
-    g_free(var.tagfile);
-    g_free(var.path);
+    g_free (var.fname);
+    g_free (var.tagfile);
+    g_free (var.path);
     if (var.match_expr)
-        g_string_free(var.match_expr, TRUE);
+        g_string_free (var.match_expr, TRUE);
 }
 
 /* --------------------------------------------------------------------------------------------- */

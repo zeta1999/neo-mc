@@ -31,7 +31,7 @@
 #include "lib/fileloc.h"
 #include "lib/strescape.h"
 #include "lib/skin.h"
-#include "lib/sub-util.h"           /* exist_file() */
+#include "lib/sub-util.h"       /* exist_file() */
 #include "lib/filehighlight.h"
 
 #include "internal.h"

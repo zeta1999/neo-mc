@@ -257,7 +257,8 @@ slang_api__listbox (int h, int w, char *title, char **items, unsigned long size)
     /* Add the requested elements to the listbox. */
     for (cur_item = items; i < size && *cur_item != NULL; i++, cur_item++)
     {
-        listbox_add_item (LISTBOX(listb->list), LISTBOX_APPEND_AT_END, 's', *cur_item, NULL, FALSE);
+        listbox_add_item (LISTBOX (listb->list), LISTBOX_APPEND_AT_END, 's', *cur_item, NULL,
+                          FALSE);
     }
 
     /* Run the dialog and get and then return the index of the selected item. */
@@ -291,7 +292,8 @@ slang_api__listbox_with_data (int h, int w, char *title, char **items, unsigned 
     /* Add the requested elements to the listbox, also passing the associated data. */
     for (p = 0, cur_item = items; p < size && *cur_item != NULL; p++, cur_item++)
     {
-        listbox_add_item (LISTBOX(listb->list), LISTBOX_APPEND_AT_END, 's', *cur_item, *cur_data, FALSE);
+        listbox_add_item (LISTBOX (listb->list), LISTBOX_APPEND_AT_END, 's', *cur_item, *cur_data,
+                          FALSE);
 
         /* Advance the item data pointer, respecting its size. */
         if (q < size2)

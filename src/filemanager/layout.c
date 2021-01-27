@@ -50,7 +50,7 @@
 #include "lib/strutil.h"
 #include "lib/widget.h"
 #include "lib/event.h"
-#include "lib/sub-util.h"           /* mc_time_elapsed() */
+#include "lib/sub-util.h"       /* mc_time_elapsed() */
 
 #include "src/consaver/cons.saver.h"
 #include "src/viewer/mcviewer.h"        /* The view widget */

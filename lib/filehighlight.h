@@ -2,7 +2,7 @@
 #define MC__FILEHIGHLIGHT_H
 
 #include "lib/mcconfig.h"       /* mc_config_t */
-#include "lib/sub-util.h"           /* file_entry_t */
+#include "lib/sub-util.h"       /* file_entry_t */
 
 /*** typedefs(not structures) and defined constants **********************************************/
 

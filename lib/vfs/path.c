@@ -36,7 +36,7 @@
 
 #include "lib/global.h"
 #include "lib/strutil.h"
-#include "lib/sub-util.h"           /* mc_build_filename() */
+#include "lib/sub-util.h"       /* mc_build_filename() */
 #include "lib/serialize.h"
 
 #include "vfs.h"

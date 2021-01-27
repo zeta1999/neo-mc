@@ -40,7 +40,7 @@
 
 #include "lib/global.h"
 #include "lib/unixcompat.h"
-#include "lib/sub-util.h"           /* mc_mkstemps() */
+#include "lib/sub-util.h"       /* mc_mkstemps() */
 #include "lib/widget.h"         /* message() */
 #include "lib/strutil.h"        /* INVALID_CONV */
 

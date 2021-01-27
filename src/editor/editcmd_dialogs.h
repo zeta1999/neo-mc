@@ -29,7 +29,7 @@ char *editcmd_dialog_completion_show (const WEdit * edit, int max_len, GString *
                                       int num_compl);
 
 etags_hash_t *editcmd_dialog_select_tags_object_show (WEdit *, char *, int, etags_hash_t *,
-                                                        etags_jump_type_t, int);
+                                                      etags_jump_type_t, int);
 
 int editcmd_dialog_replace_prompt_show (WEdit *, char *, char *, int, int);
 /*** inline functions ****************************************************************************/

@@ -40,7 +40,7 @@
 #include "lib/tty/tty.h"
 #include "lib/tty/key.h"        /* tty_getch() */
 #include "lib/strutil.h"
-#include "lib/sub-util.h"           /* tilde_expand() */
+#include "lib/sub-util.h"       /* tilde_expand() */
 #include "lib/widget.h"
 #include "lib/event.h"          /* mc_event_raise() */
 

@@ -568,8 +568,8 @@ execute_menu_command (const WEdit * edit_widget, const char *commands, gboolean 
             gboolean ok;
 
             /* Prepare the terminal by setting its flag to the initial ones. This will cause \r to
-ork as
-             * expected, instead of being ignored. */
+               ork as
+               * expected, instead of being ignored. */
             tty_reset_shell_mode ();
 
             ok = (system (cmd) != -1);

@@ -37,7 +37,7 @@
 #include "lib/global.h"
 #include "lib/vfs/vfs.h"
 #include "lib/strescape.h"      /* strutils_shell_unescape() */
-#include "lib/sub-util.h"           /* whitespace() */
+#include "lib/sub-util.h"       /* whitespace() */
 
 #include "filemanager.h"        /* current_panel, panel.h, layout.h */
 #include "tree.h"               /* sync_tree() */

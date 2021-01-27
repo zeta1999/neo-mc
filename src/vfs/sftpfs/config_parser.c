@@ -32,7 +32,7 @@
 #include "lib/global.h"
 
 #include "lib/search.h"
-#include "lib/sub-util.h"           /* tilde_expand() */
+#include "lib/sub-util.h"       /* tilde_expand() */
 #include "lib/vfs/utilvfs.h"
 
 #include "internal.h"

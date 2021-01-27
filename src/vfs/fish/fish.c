@@ -63,7 +63,7 @@
 #include "lib/strescape.h"
 #include "lib/unixcompat.h"
 #include "lib/fileloc.h"
-#include "lib/sub-util.h"           /* my_exit() */
+#include "lib/sub-util.h"       /* my_exit() */
 #include "lib/mcconfig.h"
 
 #include "src/execute.h"        /* pre_exec, post_exec */

@@ -73,7 +73,7 @@
 #include "hotlist.h"
 #include "panelize.h"
 #include "command.h"            /* cmdline */
-#include "fman-dir.h"                /* dir_list_clean() */
+#include "fman-dir.h"           /* dir_list_clean() */
 
 #ifdef USE_INTERNAL_EDIT
 #include "src/editor/edit.h"

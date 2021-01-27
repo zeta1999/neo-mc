@@ -8,7 +8,7 @@
  * SLIRP is free software, and may be used under the conditions stipulated
  * in the COPYRIGHT agreement bundled within the SLIRP distribution.
  */
-#include <stdlib.h>		/* SLIRP common {{{ */
+#include <stdlib.h>             /* SLIRP common {{{ */
 #include <unistd.h>
 #include <string.h>
 #include <stdarg.h>
@@ -34,838 +34,986 @@
 #define USAGE(msg) \
     {SLang_verror(SL_USAGE_ERROR, (char*)"Usage: %s", msg); return;}
 
-static void Slirp_usage(int i, int j, int flags);
+static void Slirp_usage (int i, int j, int flags);
 
-static int slang_abi_mismatch(void)
+static int
+slang_abi_mismatch (void)
 {
-   long module_abi = SLANG_VERSION / 10000;
-   long app_abi    = SLang_Version / 10000;
+    long module_abi = SLANG_VERSION / 10000;
+    long app_abi = SLang_Version / 10000;
 
-   if (module_abi != app_abi) {
-	SLang_verror(SL_APPLICATION_ERROR, (char*)
-		"S-Lang library abi mismatch\nmodule: %s, application: %s",
-		SLANG_VERSION_STRING, SLang_Version_String);
-	return 1;
-   }
+    if (module_abi != app_abi)
+    {
+        SLang_verror (SL_APPLICATION_ERROR, (char *)
+                      "S-Lang library abi mismatch\nmodule: %s, application: %s",
+                      SLANG_VERSION_STRING, SLang_Version_String);
+        return 1;
+    }
 
-   return 0;
-} /* }}} */
+    return 0;
+}                               /* }}} */
 
-static char *slns;  /* slang namespace active at time of module load */
+static char *slns;              /* slang namespace active at time of module load */
 #include "slang_api_functions.h"
 #define BEGIN_DECLS
 #define END_DECLS
 static unsigned char map_scalars_to_refs = 0;
 
-typedef struct _Slirp_Ref {			/* Ref handling code {{{ */
+typedef struct _Slirp_Ref
+{                               /* Ref handling code {{{ */
 #define	REF_FLAG_FREE_DATA			0x01
 #define	REF_FLAG_IS_OPAQUE			0x02
 #define	REF_FLAG_COLUMN_MAJOR			0x04
 #define	REF_FLAG_ARRAY_EXPECTED			0x08
-   unsigned int		flags;		/* Slirp_Ref encapsulates S-Lang    */
-   SLtype		sltype;		/* array, ref, and MMT types, the   */
-   size_t		sizeof_type;	/* latter two of which are seen as  */
-   void			**data;		/* pointing to a single object      */
-   unsigned int		vstride;	/* how to find "next" vectored elem */
-   SLang_Array_Type	*array;
-   SLang_Ref_Type	*ref;
-   SLang_MMT_Type	*mmt;		/* mmt supports passing around C    */
-} Slirp_Ref;				/* ptr arrays of indeterminate size */
+    unsigned int flags;         /* Slirp_Ref encapsulates S-Lang    */
+    SLtype sltype;              /* array, ref, and MMT types, the   */
+    size_t sizeof_type;         /* latter two of which are seen as  */
+    void **data;                /* pointing to a single object      */
+    unsigned int vstride;       /* how to find "next" vectored elem */
+    SLang_Array_Type *array;
+    SLang_Ref_Type *ref;
+    SLang_MMT_Type *mmt;        /* mmt supports passing around C    */
+} Slirp_Ref;                    /* ptr arrays of indeterminate size */
 
-static Slirp_Ref* ref_new(SLtype t,size_t typesize, void *d,unsigned int flags)
+static Slirp_Ref *
+ref_new (SLtype t, size_t typesize, void *d, unsigned int flags)
 {
-   Slirp_Ref *ref;
-   if ((ref = (Slirp_Ref*)SLcalloc( sizeof(Slirp_Ref), 1)) != NULL) {
-	ref->sltype = t;
-	ref->sizeof_type = typesize;
-	ref->flags = flags;
-	ref->data = (void**)d;
-	*ref->data = NULL;
-   }
-   return ref;
+    Slirp_Ref *ref;
+    if ((ref = (Slirp_Ref *) SLcalloc (sizeof (Slirp_Ref), 1)) != NULL)
+    {
+        ref->sltype = t;
+        ref->sizeof_type = typesize;
+        ref->flags = flags;
+        ref->data = (void **) d;
+        *ref->data = NULL;
+    }
+    return ref;
 }
 
-static int ref_finalize(Slirp_Ref *r) /* {{{ */
+static int
+ref_finalize (Slirp_Ref * r)    /* {{{ */
 {
-   int status = 0;
-   if (r == NULL) return 0;
+    int status = 0;
+    if (r == NULL)
+        return 0;
 
-   if (r->ref) {
+    if (r->ref)
+    {
 
-        void *ref_value = NULL; SLtype ref_type = 0; double dc[2];
+        void *ref_value = NULL;
+        SLtype ref_type = 0;
+        double dc[2];
 
-	if (r->flags & REF_FLAG_IS_OPAQUE) { 	/* wrap aggregates/opaques  */
-#ifdef NUM_RESERVED_OPAQUES			/* in mmt before ref assign */
-	   void *opaqval = *r->data;		/* the mmt w/be freed when  */
-	   if (opaqval == NULL) {		/* the S-Lang object goes   */
-		ref_value = NULL;		/* out of scope		    */
-		ref_type = SLANG_NULL_TYPE;
-	   }
-	   else {
-		SLang_MMT_Type *mmt = create_opaque_mmt(r->sltype, opaqval, 0);
-		ref_value = &mmt;
-		ref_type = r->sltype;
-	   }
+        if (r->flags & REF_FLAG_IS_OPAQUE)
+        {                       /* wrap aggregates/opaques  */
+#ifdef NUM_RESERVED_OPAQUES     /* in mmt before ref assign */
+            void *opaqval = *r->data;   /* the mmt w/be freed when  */
+            if (opaqval == NULL)
+            {                   /* the S-Lang object goes   */
+                ref_value = NULL;       /* out of scope             */
+                ref_type = SLANG_NULL_TYPE;
+            }
+            else
+            {
+                SLang_MMT_Type *mmt = create_opaque_mmt (r->sltype, opaqval, 0);
+                ref_value = &mmt;
+                ref_type = r->sltype;
+            }
 #endif
-	}
-	else {
-	   ref_type = r->sltype;
-	   if (ref_type == SLANG_COMPLEX_TYPE && r->sizeof_type < sizeof(dc)) {
-		float *fc = (float*) r->data;
-		dc[0] = fc[0];
-		dc[1] = fc[1];
-		ref_value = dc;
-	   }
-	   else
-		ref_value = r->data;
-	}
+        }
+        else
+        {
+            ref_type = r->sltype;
+            if (ref_type == SLANG_COMPLEX_TYPE && r->sizeof_type < sizeof (dc))
+            {
+                float *fc = (float *) r->data;
+                dc[0] = fc[0];
+                dc[1] = fc[1];
+                ref_value = dc;
+            }
+            else
+                ref_value = r->data;
+        }
 
-	status = SLang_assign_to_ref (r->ref, ref_type, ref_value);
-	SLang_free_ref(r->ref);
-   }
-   else if (r->array) {
+        status = SLang_assign_to_ref (r->ref, ref_type, ref_value);
+        SLang_free_ref (r->ref);
+    }
+    else if (r->array)
+    {
 #ifdef HAVE_FORTRAN_CODE
-	if ((r->flags & REF_FLAG_COLUMN_MAJOR) && TRANSPOSE(1,r->array) == -1)
-		return -1;
+        if ((r->flags & REF_FLAG_COLUMN_MAJOR) && TRANSPOSE (1, r->array) == -1)
+            return -1;
 #endif
-	SLang_free_array(r->array);
-   }
-   else if (r->mmt)
-	SLang_free_mmt(r->mmt);
+        SLang_free_array (r->array);
+    }
+    else if (r->mmt)
+        SLang_free_mmt (r->mmt);
 
-   if (r->flags & REF_FLAG_FREE_DATA)
-	SLfree( (char*) r->data );
+    if (r->flags & REF_FLAG_FREE_DATA)
+        SLfree ((char *) r->data);
 
-   SLfree((char*)r);
-   return status;
-} /* }}} */
+    SLfree ((char *) r);
+    return status;
+}                               /* }}} */
 
-static void finalize_refs(unsigned int nargs, ...) /* {{{ */
+static void
+finalize_refs (unsigned int nargs, ...) /* {{{ */
 {
-   va_list ap;
-   va_start(ap, nargs);
-   while (nargs--) ref_finalize(va_arg(ap, Slirp_Ref *));
-   va_end(ap);
-} /* }}} */
+    va_list ap;
+    va_start (ap, nargs);
+    while (nargs--)
+        ref_finalize (va_arg (ap, Slirp_Ref *));
+    va_end (ap);
+}                               /* }}} */
 
-static unsigned int ref_get_size(Slirp_Ref *r, int which_dimension) /* {{{ */
+static unsigned int
+ref_get_size (Slirp_Ref * r, int which_dimension)       /* {{{ */
 {
-   if (r->array) {
-	if (which_dimension == 0)
-	   return (unsigned int)r->array->num_elements;
-	else if (which_dimension < 0)
-	   return r->array->num_dims;
-	else {
-	   which_dimension--;
-	   if ((unsigned int)which_dimension < r->array->num_dims)
-		return (unsigned int)r->array->dims[which_dimension];
-	   else
-		return 0;
-	}
-   }
+    if (r->array)
+    {
+        if (which_dimension == 0)
+            return (unsigned int) r->array->num_elements;
+        else if (which_dimension < 0)
+            return r->array->num_dims;
+        else
+        {
+            which_dimension--;
+            if ((unsigned int) which_dimension < r->array->num_dims)
+                return (unsigned int) r->array->dims[which_dimension];
+            else
+                return 0;
+        }
+    }
 
-   return 1;
-} /* }}} */
+    return 1;
+}                               /* }}} */
 
-extern LINKAGE int _SLang_get_class_type (SLtype t);	/* quasi-public  */
+extern LINKAGE int _SLang_get_class_type (SLtype t);    /* quasi-public  */
 
 #ifdef NUM_RESERVED_OPAQUES
-static SLtype sltype_to_opaque_ptr_type(SLtype sltype) /*{{{*/
+static SLtype
+sltype_to_opaque_ptr_type (SLtype sltype)       /*{{{ */
 {
-   Reserved_Opaque_Type *pt;
+    Reserved_Opaque_Type *pt;
 
-   if (sltype > Last_Reserved_Opaque_Type) return opaque_ptr_Type;
-   if (sltype == void_ptr_Type) return void_ptr_Type;
+    if (sltype > Last_Reserved_Opaque_Type)
+        return opaque_ptr_Type;
+    if (sltype == void_ptr_Type)
+        return void_ptr_Type;
 
-   pt = Reserved_Opaque_Types;		/* sequential search, but s/b < O(n) */
-   while (pt->name) {			/* since list is ordered by expected */
-	if (pt->masked_type == sltype)	/* frequency of use for each SLtype  */
-	   return *pt->type;
-	pt++;
-   }
-   return 0;
-} /*}}}*/
+    pt = Reserved_Opaque_Types; /* sequential search, but s/b < O(n) */
+    while (pt->name)
+    {                           /* since list is ordered by expected */
+        if (pt->masked_type == sltype)  /* frequency of use for each SLtype  */
+            return *pt->type;
+        pt++;
+    }
+    return 0;
+}                               /*}}} */
 #endif
 
-static int try_pop_mmt(SLtype type, SLang_MMT_Type **mmt) /*{{{*/
+static int
+try_pop_mmt (SLtype type, SLang_MMT_Type ** mmt)        /*{{{ */
 {
-   static SLang_Name_Type *cl_type_func;	/* SLang_pop_mmt doesn't */
-   int classtype;				/* validate that type is */
-						/* an MMT, so we do here */
-   *mmt = NULL;					/* FIXME: remove v2.0.7  */
+    static SLang_Name_Type *cl_type_func;       /* SLang_pop_mmt doesn't */
+    int classtype;              /* validate that type is */
+    /* an MMT, so we do here */
+    *mmt = NULL;                /* FIXME: remove v2.0.7  */
 
-   if (cl_type_func == NULL)
-	cl_type_func = SLang_get_function( (char*) "__class_type");
+    if (cl_type_func == NULL)
+        cl_type_func = SLang_get_function ((char *) "__class_type");
 
-   if (cl_type_func == NULL)
-      return 0;
+    if (cl_type_func == NULL)
+        return 0;
 
-   if (-1 == SLang_push_datatype(type) ||		/* do the hard way, */
-	-1 == SLexecute_function(cl_type_func) ||	/* as C api lacks   */
-	-1 == SLang_pop_int(&classtype))		/* get_class_type() */
-	return -1;
+    if (-1 == SLang_push_datatype (type) ||     /* do the hard way, */
+        -1 == SLexecute_function (cl_type_func) ||      /* as C api lacks   */
+        -1 == SLang_pop_int (&classtype))       /* get_class_type() */
+        return -1;
 
-   if (classtype == SLANG_CLASS_TYPE_MMT) {
-	*mmt = SLang_pop_mmt(type);
-	return 1;
-   }
-   return 0;
-} /*}}}*/
+    if (classtype == SLANG_CLASS_TYPE_MMT)
+    {
+        *mmt = SLang_pop_mmt (type);
+        return 1;
+    }
+    return 0;
+}                               /*}}} */
 
 #define POP_FLAG_NULLABLE	0x1
 #define POP_FLAG_VECTORIZE	0x2
-static int pop_array_or_ref(Slirp_Ref *r, int flags, int defaultable) /*{{{*/
+static int
+pop_array_or_ref (Slirp_Ref * r, int flags, int defaultable)    /*{{{ */
 {
-   SLtype type;
-   unsigned int i, objtype;
+    SLtype type;
+    unsigned int i, objtype;
 #ifdef NUM_RESERVED_OPAQUES
-   unsigned int is_opaque;
+    unsigned int is_opaque;
 #endif
 
-   if (r == NULL) {
-	SLang_verror(SL_INTRINSIC_ERROR, (char*)"Attempted NULL reference (out of memory?)");
-	return -1;
-   }
+    if (r == NULL)
+    {
+        SLang_verror (SL_INTRINSIC_ERROR, (char *) "Attempted NULL reference (out of memory?)");
+        return -1;
+    }
 
-   if (defaultable && SLang_Num_Function_Args < defaultable) {
-	r->ref   = NULL;	/* observe that only NULL can be */
-	*r->data = NULL;	/* assigned as the default value */
-	return 0;
-   }
+    if (defaultable && SLang_Num_Function_Args < defaultable)
+    {
+        r->ref = NULL;          /* observe that only NULL can be */
+        *r->data = NULL;        /* assigned as the default value */
+        return 0;
+    }
 
-   objtype = SLang_peek_at_stack();
+    objtype = SLang_peek_at_stack ();
 
-   if ((flags & POP_FLAG_NULLABLE) && objtype == SLANG_NULL_TYPE) {
-	r->ref   = NULL;		/* nullable flag: a pointer arg for */
-	*r->data = NULL;		/* which NULL is a legitimate value */
-	return SLang_pop_null ();
-   }
+    if ((flags & POP_FLAG_NULLABLE) && objtype == SLANG_NULL_TYPE)
+    {
+        r->ref = NULL;          /* nullable flag: a pointer arg for */
+        *r->data = NULL;        /* which NULL is a legitimate value */
+        return SLang_pop_null ();
+    }
 
-   type = r->sltype;
+    type = r->sltype;
 
 #ifdef NUM_RESERVED_OPAQUES
-   is_opaque =(type >= First_Opaque_Type && sltype_to_slirp_type(type) != NULL);
-   if (is_opaque) r->flags |= REF_FLAG_IS_OPAQUE;
+    is_opaque = (type >= First_Opaque_Type && sltype_to_slirp_type (type) != NULL);
+    if (is_opaque)
+        r->flags |= REF_FLAG_IS_OPAQUE;
 #endif
 
-   switch(objtype) {
+    switch (objtype)
+    {
 
-	case SLANG_ARRAY_TYPE:
+    case SLANG_ARRAY_TYPE:
 
-	   if (SLang_pop_array_of_type(&r->array, type) == -1)
-		return -1;
+        if (SLang_pop_array_of_type (&r->array, type) == -1)
+            return -1;
 
 #ifdef HAVE_FORTRAN_CODE
-	   if (r->flags & REF_FLAG_COLUMN_MAJOR) {
-		if (flags & POP_FLAG_VECTORIZE)		/* vectorizable arrs*/
-		   r->flags ^= REF_FLAG_COLUMN_MAJOR;   /* r not transposed */
-		else if (TRANSPOSE(0,r->array) == -1)
-		   return -1;
-	   }
+        if (r->flags & REF_FLAG_COLUMN_MAJOR)
+        {
+            if (flags & POP_FLAG_VECTORIZE)     /* vectorizable arrs */
+                r->flags ^= REF_FLAG_COLUMN_MAJOR;      /* r not transposed */
+            else if (TRANSPOSE (0, r->array) == -1)
+                return -1;
+        }
 #endif
 
-	   i = r->array->num_elements;
+        i = r->array->num_elements;
 #ifdef NUM_RESERVED_OPAQUES
-	   if (is_opaque) {
-		Slirp_Opaque *ot;
-		SLang_MMT_Type** mmts = (SLang_MMT_Type**)r->array->data;
-		void **arr = (void**)SLmalloc(i * sizeof(void*) );
-		if (arr == NULL) return -1;
+        if (is_opaque)
+        {
+            Slirp_Opaque *ot;
+            SLang_MMT_Type **mmts = (SLang_MMT_Type **) r->array->data;
+            void **arr = (void **) SLmalloc (i * sizeof (void *));
+            if (arr == NULL)
+                return -1;
 
-		while (i--) {
-		   ot = (Slirp_Opaque*) SLang_object_from_mmt (mmts[i]);
-		   if (ot == NULL) {
-			SLfree((char*)arr);
-			return -1;
-		   }
-		   arr[i] = ot->instance;
-		}
+            while (i--)
+            {
+                ot = (Slirp_Opaque *) SLang_object_from_mmt (mmts[i]);
+                if (ot == NULL)
+                {
+                    SLfree ((char *) arr);
+                    return -1;
+                }
+                arr[i] = ot->instance;
+            }
 
-		*r->data = (void*)arr; r->data = (void**)arr;
-		r->flags |= REF_FLAG_FREE_DATA;
-	   }
-	   else
+            *r->data = (void *) arr;
+            r->data = (void **) arr;
+            r->flags |= REF_FLAG_FREE_DATA;
+        }
+        else
 #endif
-	   if (type == SLANG_COMPLEX_TYPE &&
-				r->sizeof_type < r->array->sizeof_type) {
-		double *dc = (double*) r->array->data;
-		float  *fc = (float *) SLmalloc(i * r->sizeof_type);
-		if (fc == NULL) return -1;
-		*r->data = fc; r->data = (void**)fc;
-		while (i--) { *fc++ = (float) *dc++; *fc++ = (float) *dc++; }
-		r->flags |= REF_FLAG_FREE_DATA;
-	   }
-	   else {
-		*r->data = r->array->data;
-		r->data = (void**)*r->data;
-	   }
+        if (type == SLANG_COMPLEX_TYPE && r->sizeof_type < r->array->sizeof_type)
+        {
+            double *dc = (double *) r->array->data;
+            float *fc = (float *) SLmalloc (i * r->sizeof_type);
+            if (fc == NULL)
+                return -1;
+            *r->data = fc;
+            r->data = (void **) fc;
+            while (i--)
+            {
+                *fc++ = (float) *dc++;
+                *fc++ = (float) *dc++;
+            }
+            r->flags |= REF_FLAG_FREE_DATA;
+        }
+        else
+        {
+            *r->data = r->array->data;
+            r->data = (void **) *r->data;
+        }
 
-	   break;
+        break;
 
-	case SLANG_REF_TYPE:
+    case SLANG_REF_TYPE:
 
-	   /* Refs can only send values one-way (C to S-Lang, not reverse) */
-	   if (SLang_pop_ref(&r->ref) == -1)
-		return -1;
+        /* Refs can only send values one-way (C to S-Lang, not reverse) */
+        if (SLang_pop_ref (&r->ref) == -1)
+            return -1;
 
-	   /* Ref is assumed to point to a scalar instance of the  */
-	   /* refd type, so declare enough space to hold one such. */
-	   *r->data = (void*)SLmalloc(r->sizeof_type);
-	   if (*r->data == NULL) return -1;
-	   memset(*r->data, 0, r->sizeof_type);
-	   r->flags |= REF_FLAG_FREE_DATA;
-	   r->data = (void**)*r->data;
-	   break;
+        /* Ref is assumed to point to a scalar instance of the  */
+        /* refd type, so declare enough space to hold one such. */
+        *r->data = (void *) SLmalloc (r->sizeof_type);
+        if (*r->data == NULL)
+            return -1;
+        memset (*r->data, 0, r->sizeof_type);
+        r->flags |= REF_FLAG_FREE_DATA;
+        r->data = (void **) *r->data;
+        break;
 
-	/* Allow scalars to used as if they were 1-element arrays */
-	case SLANG_CHAR_TYPE: case SLANG_UCHAR_TYPE:
-	case SLANG_SHORT_TYPE: case SLANG_USHORT_TYPE:
-	case SLANG_INT_TYPE: case SLANG_UINT_TYPE:
-	case SLANG_LONG_TYPE: case SLANG_ULONG_TYPE:
-	case SLANG_FLOAT_TYPE: case SLANG_DOUBLE_TYPE:
-	case SLANG_COMPLEX_TYPE: case SLANG_STRING_TYPE:
+        /* Allow scalars to used as if they were 1-element arrays */
+    case SLANG_CHAR_TYPE:
+    case SLANG_UCHAR_TYPE:
+    case SLANG_SHORT_TYPE:
+    case SLANG_USHORT_TYPE:
+    case SLANG_INT_TYPE:
+    case SLANG_UINT_TYPE:
+    case SLANG_LONG_TYPE:
+    case SLANG_ULONG_TYPE:
+    case SLANG_FLOAT_TYPE:
+    case SLANG_DOUBLE_TYPE:
+    case SLANG_COMPLEX_TYPE:
+    case SLANG_STRING_TYPE:
 
-	   /* Accomodate FORTRAN-style pass by reference semantics */
-	   if (map_scalars_to_refs &&
-			SLang_pop_array_of_type(&r->array,type) == 0) {
+        /* Accomodate FORTRAN-style pass by reference semantics */
+        if (map_scalars_to_refs && SLang_pop_array_of_type (&r->array, type) == 0)
+        {
 
-		*r->data = (void*)SLmalloc(r->sizeof_type);
-		if (*r->data == NULL) return -1;
+            *r->data = (void *) SLmalloc (r->sizeof_type);
+            if (*r->data == NULL)
+                return -1;
 
-		if (r->sizeof_type == r->array->sizeof_type)
-		   memcpy(*r->data, r->array->data, r->sizeof_type);
-		else if (type == SLANG_COMPLEX_TYPE) {
-		   double *dc = (double*) r->array->data;
-		   float  *fc = (float*) *r->data;
-		   fc[0] = (float)dc[0];
-		   fc[1] = (float)dc[1];
-		}
-		else  {
-		   SLang_verror(SL_TYPE_MISMATCH, (char*)
-			"mismatched type sizes, when popping scalar as ref");
-		   SLang_free_array(r->array);
-		   return -1;
-		}
+            if (r->sizeof_type == r->array->sizeof_type)
+                memcpy (*r->data, r->array->data, r->sizeof_type);
+            else if (type == SLANG_COMPLEX_TYPE)
+            {
+                double *dc = (double *) r->array->data;
+                float *fc = (float *) *r->data;
+                fc[0] = (float) dc[0];
+                fc[1] = (float) dc[1];
+            }
+            else
+            {
+                SLang_verror (SL_TYPE_MISMATCH, (char *)
+                              "mismatched type sizes, when popping scalar as ref");
+                SLang_free_array (r->array);
+                return -1;
+            }
 
-		r->data = (void**)*r->data;
-		r->flags |= REF_FLAG_FREE_DATA;
-		/* Nullify to distinguish between vectored/non-vectored args */
-		SLang_free_array(r->array); r->array = NULL;
-		break;
-	   }				/* intentional fallthrough */
+            r->data = (void **) *r->data;
+            r->flags |= REF_FLAG_FREE_DATA;
+            /* Nullify to distinguish between vectored/non-vectored args */
+            SLang_free_array (r->array);
+            r->array = NULL;
+            break;
+        }                       /* intentional fallthrough */
 
-	default:
+    default:
 
 #ifdef NUM_RESERVED_OPAQUES
-	   if (objtype >= First_Opaque_Type &&
-				sltype_to_slirp_type(objtype) != NULL) {
+        if (objtype >= First_Opaque_Type && sltype_to_slirp_type (objtype) != NULL)
+        {
 
-		if (!(flags & POP_FLAG_VECTORIZE))
-		   type = sltype_to_opaque_ptr_type(type);
+            if (!(flags & POP_FLAG_VECTORIZE))
+                type = sltype_to_opaque_ptr_type (type);
 
-		if (type) {
+            if (type)
+            {
 
-		   Slirp_Opaque *otp;
-		   if (SLang_pop_opaque(type, NULL, &otp) == -1)
-			return -1;
+                Slirp_Opaque *otp;
+                if (SLang_pop_opaque (type, NULL, &otp) == -1)
+                    return -1;
 
-		   if (flags & POP_FLAG_VECTORIZE) {
-			void **arr = (void**) SLmalloc(sizeof(void*));
-			if (arr == NULL) return -1;
-			arr[0] = otp->instance;
-			*r->data = arr;
-			r->flags |= REF_FLAG_FREE_DATA;
-		   }
-		   else
-			*r->data = otp->instance;
+                if (flags & POP_FLAG_VECTORIZE)
+                {
+                    void **arr = (void **) SLmalloc (sizeof (void *));
+                    if (arr == NULL)
+                        return -1;
+                    arr[0] = otp->instance;
+                    *r->data = arr;
+                    r->flags |= REF_FLAG_FREE_DATA;
+                }
+                else
+                    *r->data = otp->instance;
 
-		   r->data = (void**)*r->data;
-		   r->mmt = otp->mmt;
-		   return 0;
-		}
-	   }
-	   else
+                r->data = (void **) *r->data;
+                r->mmt = otp->mmt;
+                return 0;
+            }
+        }
+        else
 #endif
-	   if ( try_pop_mmt(objtype, &r->mmt) == 1 &&
-		(*r->data = SLang_object_from_mmt (r->mmt)) != NULL) {
-		   r->data = (void**)*r->data;	 /* not flagged for freeing */
-		   return 0;
-	   }
+        if (try_pop_mmt (objtype, &r->mmt) == 1 &&
+                (*r->data = SLang_object_from_mmt (r->mmt)) != NULL)
+        {
+            r->data = (void **) *r->data;       /* not flagged for freeing */
+            return 0;
+        }
 
-	   SLang_verror(SL_TYPE_MISMATCH, (char*)
-			"context requires array, ref, or opaque pointer");
-	   return -1;
-   }
-   return 0;
-} /*}}}*/
+        SLang_verror (SL_TYPE_MISMATCH, (char *) "context requires array, ref, or opaque pointer");
+        return -1;
+    }
+    return 0;
+}                               /*}}} */
+
 /* }}} */
 
-/* Wrapper functions */ /* {{{ */
-static void sl_set_action_hook (void)
+                        /* Wrapper functions *//* {{{ */
+static void
+sl_set_action_hook (void)
 {
-   int retval;
-   char* arg1;
-   char* arg2;
-   char* arg3;
-   int issue_usage = 1;
+    int retval;
+    char *arg1;
+    char *arg2;
+    char *arg3;
+    int issue_usage = 1;
 
-   if (SLang_Num_Function_Args != 3) goto usage_label;
-   if (-1 == SLang_pop_string((char**)&arg3)) goto usage_label;
-   if (-1 == SLang_pop_string((char**)&arg2)) goto free_and_return_3;
-   if (-1 == SLang_pop_string((char**)&arg1)) goto free_and_return_2;
-   issue_usage = 0;
+    if (SLang_Num_Function_Args != 3)
+        goto usage_label;
+    if (-1 == SLang_pop_string ((char **) &arg3))
+        goto usage_label;
+    if (-1 == SLang_pop_string ((char **) &arg2))
+        goto free_and_return_3;
+    if (-1 == SLang_pop_string ((char **) &arg1))
+        goto free_and_return_2;
+    issue_usage = 0;
 
-   retval = slang_api__set_action_hook(arg1, arg2, arg3);
-   (void)SLang_push_int(retval);
-   goto free_and_return;
-free_and_return:
-   /* drop */
-   SLang_free_slstring(arg1);
-free_and_return_2:
-   SLang_free_slstring(arg2);
-free_and_return_3:
-   SLang_free_slstring(arg3);
-usage_label:
-   if (issue_usage) Slirp_usage (0, 0, 0);
+    retval = slang_api__set_action_hook (arg1, arg2, arg3);
+    (void) SLang_push_int (retval);
+    goto free_and_return;
+  free_and_return:
+    /* drop */
+    SLang_free_slstring (arg1);
+  free_and_return_2:
+    SLang_free_slstring (arg2);
+  free_and_return_3:
+    SLang_free_slstring (arg3);
+  usage_label:
+    if (issue_usage)
+        Slirp_usage (0, 0, 0);
 }
 
-static void sl_cure_backspace (void)
+static void
+sl_cure_backspace (void)
 {
-   int retval;
-   int issue_usage = 1;
+    int retval;
+    int issue_usage = 1;
 
-   if (SLang_Num_Function_Args != 0) goto usage_label;
-   issue_usage = 0;
+    if (SLang_Num_Function_Args != 0)
+        goto usage_label;
+    issue_usage = 0;
 
-   retval = slang_api__cure_backspace();
-   (void)SLang_push_int(retval);
-   goto free_and_return;
-free_and_return:
-   /* drop */
-usage_label:
-   if (issue_usage) Slirp_usage (1, 1, 0);
+    retval = slang_api__cure_backspace ();
+    (void) SLang_push_int (retval);
+    goto free_and_return;
+  free_and_return:
+    /* drop */
+  usage_label:
+    if (issue_usage)
+        Slirp_usage (1, 1, 0);
 }
 
-static void sl_add_new_action (void)
+static void
+sl_add_new_action (void)
 {
-   int retval;
-   char* arg1;
-   int arg2;
-   int issue_usage = 1;
+    int retval;
+    char *arg1;
+    int arg2;
+    int issue_usage = 1;
 
-   if (SLang_Num_Function_Args != 2) goto usage_label;
-   if (-1 == SLang_pop_int((int*)&arg2)) goto usage_label;
-   if (-1 == SLang_pop_string((char**)&arg1)) goto usage_label;
-   issue_usage = 0;
+    if (SLang_Num_Function_Args != 2)
+        goto usage_label;
+    if (-1 == SLang_pop_int ((int *) &arg2))
+        goto usage_label;
+    if (-1 == SLang_pop_string ((char **) &arg1))
+        goto usage_label;
+    issue_usage = 0;
 
-   retval = keybind_add_new_action(arg1,  arg2);
-   (void)SLang_push_int(retval);
-   goto free_and_return;
-free_and_return:
-   /* drop */
-   SLang_free_slstring(arg1);
-usage_label:
-   if (issue_usage) Slirp_usage (2, 2, 0);
+    retval = keybind_add_new_action (arg1, arg2);
+    (void) SLang_push_int (retval);
+    goto free_and_return;
+  free_and_return:
+    /* drop */
+    SLang_free_slstring (arg1);
+  usage_label:
+    if (issue_usage)
+        Slirp_usage (2, 2, 0);
 }
 
-static void sl_editor_map_key_to_func (void)
+static void
+sl_editor_map_key_to_func (void)
 {
-   int retval;
-   char* arg1;
-   char* arg2;
-   char* arg3;
-   int issue_usage = 1;
+    int retval;
+    char *arg1;
+    char *arg2;
+    char *arg3;
+    int issue_usage = 1;
 
-   if (SLang_Num_Function_Args != 3) goto usage_label;
-   if (-1 == SLang_pop_string((char**)&arg3)) goto usage_label;
-   if (-1 == SLang_pop_string((char**)&arg2)) goto free_and_return_3;
-   if (-1 == SLang_pop_string((char**)&arg1)) goto free_and_return_2;
-   issue_usage = 0;
+    if (SLang_Num_Function_Args != 3)
+        goto usage_label;
+    if (-1 == SLang_pop_string ((char **) &arg3))
+        goto usage_label;
+    if (-1 == SLang_pop_string ((char **) &arg2))
+        goto free_and_return_3;
+    if (-1 == SLang_pop_string ((char **) &arg1))
+        goto free_and_return_2;
+    issue_usage = 0;
 
-   retval = slang_api__editor_map_key_to_func(arg1, arg2, arg3);
-   (void)SLang_push_int(retval);
-   goto free_and_return;
-free_and_return:
-   /* drop */
-   SLang_free_slstring(arg1);
-free_and_return_2:
-   SLang_free_slstring(arg2);
-free_and_return_3:
-   SLang_free_slstring(arg3);
-usage_label:
-   if (issue_usage) Slirp_usage (3, 3, 0);
+    retval = slang_api__editor_map_key_to_func (arg1, arg2, arg3);
+    (void) SLang_push_int (retval);
+    goto free_and_return;
+  free_and_return:
+    /* drop */
+    SLang_free_slstring (arg1);
+  free_and_return_2:
+    SLang_free_slstring (arg2);
+  free_and_return_3:
+    SLang_free_slstring (arg3);
+  usage_label:
+    if (issue_usage)
+        Slirp_usage (3, 3, 0);
 }
 
-static void sl_editor_map_key_to_action (void)
+static void
+sl_editor_map_key_to_action (void)
 {
-   int retval;
-   char* arg1;
-   char* arg2;
-   int issue_usage = 1;
+    int retval;
+    char *arg1;
+    char *arg2;
+    int issue_usage = 1;
 
-   if (SLang_Num_Function_Args != 2) goto usage_label;
-   if (-1 == SLang_pop_string((char**)&arg2)) goto usage_label;
-   if (-1 == SLang_pop_string((char**)&arg1)) goto free_and_return_2;
-   issue_usage = 0;
+    if (SLang_Num_Function_Args != 2)
+        goto usage_label;
+    if (-1 == SLang_pop_string ((char **) &arg2))
+        goto usage_label;
+    if (-1 == SLang_pop_string ((char **) &arg1))
+        goto free_and_return_2;
+    issue_usage = 0;
 
-   retval = slang_api__editor_map_key_to_action(arg1, arg2);
-   (void)SLang_push_int(retval);
-   goto free_and_return;
-free_and_return:
-   /* drop */
-   SLang_free_slstring(arg1);
-free_and_return_2:
-   SLang_free_slstring(arg2);
-usage_label:
-   if (issue_usage) Slirp_usage (4, 4, 0);
+    retval = slang_api__editor_map_key_to_action (arg1, arg2);
+    (void) SLang_push_int (retval);
+    goto free_and_return;
+  free_and_return:
+    /* drop */
+    SLang_free_slstring (arg1);
+  free_and_return_2:
+    SLang_free_slstring (arg2);
+  usage_label:
+    if (issue_usage)
+        Slirp_usage (4, 4, 0);
 }
 
-static void sl_cure_get_eol (void)
+static void
+sl_cure_get_eol (void)
 {
-   int retval;
-   int issue_usage = 1;
+    int retval;
+    int issue_usage = 1;
 
-   if (SLang_Num_Function_Args != 0) goto usage_label;
-   issue_usage = 0;
+    if (SLang_Num_Function_Args != 0)
+        goto usage_label;
+    issue_usage = 0;
 
-   retval = slang_api__cure_get_eol();
-   (void)SLang_push_int(retval);
-   goto free_and_return;
-free_and_return:
-   /* drop */
-usage_label:
-   if (issue_usage) Slirp_usage (5, 5, 0);
+    retval = slang_api__cure_get_eol ();
+    (void) SLang_push_int (retval);
+    goto free_and_return;
+  free_and_return:
+    /* drop */
+  usage_label:
+    if (issue_usage)
+        Slirp_usage (5, 5, 0);
 }
 
-static void sl_cure_get_bol (void)
+static void
+sl_cure_get_bol (void)
 {
-   int retval;
-   int issue_usage = 1;
+    int retval;
+    int issue_usage = 1;
 
-   if (SLang_Num_Function_Args != 0) goto usage_label;
-   issue_usage = 0;
+    if (SLang_Num_Function_Args != 0)
+        goto usage_label;
+    issue_usage = 0;
 
-   retval = slang_api__cure_get_bol();
-   (void)SLang_push_int(retval);
-   goto free_and_return;
-free_and_return:
-   /* drop */
-usage_label:
-   if (issue_usage) Slirp_usage (6, 6, 0);
+    retval = slang_api__cure_get_bol ();
+    (void) SLang_push_int (retval);
+    goto free_and_return;
+  free_and_return:
+    /* drop */
+  usage_label:
+    if (issue_usage)
+        Slirp_usage (6, 6, 0);
 }
 
-static void sl_cure_delete (void)
+static void
+sl_cure_delete (void)
 {
-   int retval;
-   int issue_usage = 1;
+    int retval;
+    int issue_usage = 1;
 
-   if (SLang_Num_Function_Args != 0) goto usage_label;
-   issue_usage = 0;
+    if (SLang_Num_Function_Args != 0)
+        goto usage_label;
+    issue_usage = 0;
 
-   retval = slang_api__cure_delete();
-   (void)SLang_push_int(retval);
-   goto free_and_return;
-free_and_return:
-   /* drop */
-usage_label:
-   if (issue_usage) Slirp_usage (7, 7, 0);
+    retval = slang_api__cure_delete ();
+    (void) SLang_push_int (retval);
+    goto free_and_return;
+  free_and_return:
+    /* drop */
+  usage_label:
+    if (issue_usage)
+        Slirp_usage (7, 7, 0);
 }
 
-static void sl_cure_cursor_move (void)
+static void
+sl_cure_cursor_move (void)
 {
-   int arg1;
-   int issue_usage = 1;
+    int arg1;
+    int issue_usage = 1;
 
-   if (SLang_Num_Function_Args != 1) goto usage_label;
-   if (-1 == SLang_pop_int((int*)&arg1)) goto usage_label;
-   issue_usage = 0;
+    if (SLang_Num_Function_Args != 1)
+        goto usage_label;
+    if (-1 == SLang_pop_int ((int *) &arg1))
+        goto usage_label;
+    issue_usage = 0;
 
-   slang_api__cure_cursor_move( arg1);
-   goto free_and_return;
-free_and_return:
-   /* drop */
-usage_label:
-   if (issue_usage) Slirp_usage (8, 8, 0);
+    slang_api__cure_cursor_move (arg1);
+    goto free_and_return;
+  free_and_return:
+    /* drop */
+  usage_label:
+    if (issue_usage)
+        Slirp_usage (8, 8, 0);
 }
 
-static void sl_cure_cursor_offset (void)
+static void
+sl_cure_cursor_offset (void)
 {
-   int retval;
-   int issue_usage = 1;
+    int retval;
+    int issue_usage = 1;
 
-   if (SLang_Num_Function_Args != 0) goto usage_label;
-   issue_usage = 0;
+    if (SLang_Num_Function_Args != 0)
+        goto usage_label;
+    issue_usage = 0;
 
-   retval = slang_api__cure_cursor_offset();
-   (void)SLang_push_int(retval);
-   goto free_and_return;
-free_and_return:
-   /* drop */
-usage_label:
-   if (issue_usage) Slirp_usage (9, 9, 0);
+    retval = slang_api__cure_cursor_offset ();
+    (void) SLang_push_int (retval);
+    goto free_and_return;
+  free_and_return:
+    /* drop */
+  usage_label:
+    if (issue_usage)
+        Slirp_usage (9, 9, 0);
 }
 
-static void sl_listbox_with_data (void)
+static void
+sl_listbox_with_data (void)
 {
-   char* retval;
-   int arg1;
-   int arg2;
-   char* arg3;
-   char** arg4;
-   Slirp_Ref *arg4_r = ref_new(SLANG_STRING_TYPE,sizeof(char*),&arg4,0x0);
-   unsigned long arg5;
-   char** arg6;
-   Slirp_Ref *arg6_r = ref_new(SLANG_STRING_TYPE,sizeof(char*),&arg6,0x0);
-   unsigned long arg7;
-   int issue_usage = 1;
+    char *retval;
+    int arg1;
+    int arg2;
+    char *arg3;
+    char **arg4;
+    Slirp_Ref *arg4_r = ref_new (SLANG_STRING_TYPE, sizeof (char *), &arg4, 0x0);
+    unsigned long arg5;
+    char **arg6;
+    Slirp_Ref *arg6_r = ref_new (SLANG_STRING_TYPE, sizeof (char *), &arg6, 0x0);
+    unsigned long arg7;
+    int issue_usage = 1;
 
-   if (SLang_Num_Function_Args != 5) goto usage_label;
-   if (-1 == pop_array_or_ref( arg6_r, 0x0, 0)) goto usage_label;
-   if (-1 == pop_array_or_ref( arg4_r, 0x0, 0)) goto usage_label;
-   if (-1 == SLang_pop_string((char**)&arg3)) goto usage_label;
-   if (-1 == SLang_pop_int((int*)&arg2)) goto free_and_return_3;
-   if (-1 == SLang_pop_int((int*)&arg1)) goto free_and_return_3;
-   issue_usage = 0;
+    if (SLang_Num_Function_Args != 5)
+        goto usage_label;
+    if (-1 == pop_array_or_ref (arg6_r, 0x0, 0))
+        goto usage_label;
+    if (-1 == pop_array_or_ref (arg4_r, 0x0, 0))
+        goto usage_label;
+    if (-1 == SLang_pop_string ((char **) &arg3))
+        goto usage_label;
+    if (-1 == SLang_pop_int ((int *) &arg2))
+        goto free_and_return_3;
+    if (-1 == SLang_pop_int ((int *) &arg1))
+        goto free_and_return_3;
+    issue_usage = 0;
 
-   arg5 = (unsigned long) ref_get_size(arg4_r, 1);
-   arg7 = (unsigned long) ref_get_size(arg6_r, 1);
-   retval = slang_api__listbox_with_data( arg1,  arg2, arg3, arg4,  arg5, arg6,  arg7);
-   (void)SLang_push_malloced_string(retval);
-   goto free_and_return;
-free_and_return:
-   /* drop */
-free_and_return_3:
-   SLang_free_slstring(arg3);
-usage_label:
-   if (issue_usage) Slirp_usage (10, 10, 0);
-   finalize_refs(2,arg4_r,arg6_r);
+    arg5 = (unsigned long) ref_get_size (arg4_r, 1);
+    arg7 = (unsigned long) ref_get_size (arg6_r, 1);
+    retval = slang_api__listbox_with_data (arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+    (void) SLang_push_malloced_string (retval);
+    goto free_and_return;
+  free_and_return:
+    /* drop */
+  free_and_return_3:
+    SLang_free_slstring (arg3);
+  usage_label:
+    if (issue_usage)
+        Slirp_usage (10, 10, 0);
+    finalize_refs (2, arg4_r, arg6_r);
 }
 
-static void sl_cure_get_left_whole_word (void)
+static void
+sl_cure_get_left_whole_word (void)
 {
-   char* retval;
-   int arg1;
-   int issue_usage = 1;
+    char *retval;
+    int arg1;
+    int issue_usage = 1;
 
-   if (SLang_Num_Function_Args != 1) goto usage_label;
-   if (-1 == SLang_pop_int((int*)&arg1)) goto usage_label;
-   issue_usage = 0;
+    if (SLang_Num_Function_Args != 1)
+        goto usage_label;
+    if (-1 == SLang_pop_int ((int *) &arg1))
+        goto usage_label;
+    issue_usage = 0;
 
-   retval = slang_api__cure_get_left_whole_word( arg1);
-   (void)SLang_push_malloced_string(retval);
-   goto free_and_return;
-free_and_return:
-   /* drop */
-usage_label:
-   if (issue_usage) Slirp_usage (11, 11, 0);
+    retval = slang_api__cure_get_left_whole_word (arg1);
+    (void) SLang_push_malloced_string (retval);
+    goto free_and_return;
+  free_and_return:
+    /* drop */
+  usage_label:
+    if (issue_usage)
+        Slirp_usage (11, 11, 0);
 }
 
-static void sl_listbox (void)
+static void
+sl_listbox (void)
 {
-   int retval;
-   int arg1;
-   int arg2;
-   char* arg3;
-   char** arg4;
-   Slirp_Ref *arg4_r = ref_new(SLANG_STRING_TYPE,sizeof(char*),&arg4,0x0);
-   unsigned long arg5;
-   int issue_usage = 1;
+    int retval;
+    int arg1;
+    int arg2;
+    char *arg3;
+    char **arg4;
+    Slirp_Ref *arg4_r = ref_new (SLANG_STRING_TYPE, sizeof (char *), &arg4, 0x0);
+    unsigned long arg5;
+    int issue_usage = 1;
 
-   if (SLang_Num_Function_Args != 4) goto usage_label;
-   if (-1 == pop_array_or_ref( arg4_r, 0x0, 0)) goto usage_label;
-   if (-1 == SLang_pop_string((char**)&arg3)) goto usage_label;
-   if (-1 == SLang_pop_int((int*)&arg2)) goto free_and_return_3;
-   if (-1 == SLang_pop_int((int*)&arg1)) goto free_and_return_3;
-   issue_usage = 0;
+    if (SLang_Num_Function_Args != 4)
+        goto usage_label;
+    if (-1 == pop_array_or_ref (arg4_r, 0x0, 0))
+        goto usage_label;
+    if (-1 == SLang_pop_string ((char **) &arg3))
+        goto usage_label;
+    if (-1 == SLang_pop_int ((int *) &arg2))
+        goto free_and_return_3;
+    if (-1 == SLang_pop_int ((int *) &arg1))
+        goto free_and_return_3;
+    issue_usage = 0;
 
-   arg5 = (unsigned long) ref_get_size(arg4_r, 1);
-   retval = slang_api__listbox( arg1,  arg2, arg3, arg4,  arg5);
-   (void)SLang_push_int(retval);
-   goto free_and_return;
-free_and_return:
-   /* drop */
-free_and_return_3:
-   SLang_free_slstring(arg3);
-usage_label:
-   if (issue_usage) Slirp_usage (12, 12, 0);
-   finalize_refs(1,arg4_r);
+    arg5 = (unsigned long) ref_get_size (arg4_r, 1);
+    retval = slang_api__listbox (arg1, arg2, arg3, arg4, arg5);
+    (void) SLang_push_int (retval);
+    goto free_and_return;
+  free_and_return:
+    /* drop */
+  free_and_return_3:
+    SLang_free_slstring (arg3);
+  usage_label:
+    if (issue_usage)
+        Slirp_usage (12, 12, 0);
+    finalize_refs (1, arg4_r);
 }
 
-static void sl_message (void)
+static void
+sl_message (void)
 {
-   char* arg1;
-   char* arg2;
-   int issue_usage = 1;
+    char *arg1;
+    char *arg2;
+    int issue_usage = 1;
 
-   if (SLang_Num_Function_Args != 2) goto usage_label;
-   if (-1 == SLang_pop_string((char**)&arg2)) goto usage_label;
-   if (-1 == SLang_pop_string((char**)&arg1)) goto free_and_return_2;
-   issue_usage = 0;
+    if (SLang_Num_Function_Args != 2)
+        goto usage_label;
+    if (-1 == SLang_pop_string ((char **) &arg2))
+        goto usage_label;
+    if (-1 == SLang_pop_string ((char **) &arg1))
+        goto free_and_return_2;
+    issue_usage = 0;
 
-   slang_api__message(arg1, arg2);
-   goto free_and_return;
-free_and_return:
-   /* drop */
-   SLang_free_slstring(arg1);
-free_and_return_2:
-   SLang_free_slstring(arg2);
-usage_label:
-   if (issue_usage) Slirp_usage (13, 13, 0);
+    slang_api__message (arg1, arg2);
+    goto free_and_return;
+  free_and_return:
+    /* drop */
+    SLang_free_slstring (arg1);
+  free_and_return_2:
+    SLang_free_slstring (arg2);
+  usage_label:
+    if (issue_usage)
+        Slirp_usage (13, 13, 0);
 }
 
-static void sl_listbox_auto (void)
+static void
+sl_listbox_auto (void)
 {
-   int retval;
-   char* arg1;
-   char** arg2;
-   Slirp_Ref *arg2_r = ref_new(SLANG_STRING_TYPE,sizeof(char*),&arg2,0x0);
-   unsigned long arg3;
-   int issue_usage = 1;
+    int retval;
+    char *arg1;
+    char **arg2;
+    Slirp_Ref *arg2_r = ref_new (SLANG_STRING_TYPE, sizeof (char *), &arg2, 0x0);
+    unsigned long arg3;
+    int issue_usage = 1;
 
-   if (SLang_Num_Function_Args != 2) goto usage_label;
-   if (-1 == pop_array_or_ref( arg2_r, 0x0, 0)) goto usage_label;
-   if (-1 == SLang_pop_string((char**)&arg1)) goto usage_label;
-   issue_usage = 0;
+    if (SLang_Num_Function_Args != 2)
+        goto usage_label;
+    if (-1 == pop_array_or_ref (arg2_r, 0x0, 0))
+        goto usage_label;
+    if (-1 == SLang_pop_string ((char **) &arg1))
+        goto usage_label;
+    issue_usage = 0;
 
-   arg3 = (unsigned long) ref_get_size(arg2_r, 1);
-   retval = slang_api__listbox_auto(arg1, arg2,  arg3);
-   (void)SLang_push_int(retval);
-   goto free_and_return;
-free_and_return:
-   /* drop */
-   SLang_free_slstring(arg1);
-usage_label:
-   if (issue_usage) Slirp_usage (14, 14, 0);
-   finalize_refs(1,arg2_r);
+    arg3 = (unsigned long) ref_get_size (arg2_r, 1);
+    retval = slang_api__listbox_auto (arg1, arg2, arg3);
+    (void) SLang_push_int (retval);
+    goto free_and_return;
+  free_and_return:
+    /* drop */
+    SLang_free_slstring (arg1);
+  usage_label:
+    if (issue_usage)
+        Slirp_usage (14, 14, 0);
+    finalize_refs (1, arg2_r);
 }
 
-static void sl_cure_get_byte (void)
+static void
+sl_cure_get_byte (void)
 {
-   int retval;
-   int arg1;
-   int issue_usage = 1;
+    int retval;
+    int arg1;
+    int issue_usage = 1;
 
-   if (SLang_Num_Function_Args != 1) goto usage_label;
-   if (-1 == SLang_pop_int((int*)&arg1)) goto usage_label;
-   issue_usage = 0;
+    if (SLang_Num_Function_Args != 1)
+        goto usage_label;
+    if (-1 == SLang_pop_int ((int *) &arg1))
+        goto usage_label;
+    issue_usage = 0;
 
-   retval = slang_api__cure_get_byte( arg1);
-   (void)SLang_push_int(retval);
-   goto free_and_return;
-free_and_return:
-   /* drop */
-usage_label:
-   if (issue_usage) Slirp_usage (15, 15, 0);
+    retval = slang_api__cure_get_byte (arg1);
+    (void) SLang_push_int (retval);
+    goto free_and_return;
+  free_and_return:
+    /* drop */
+  usage_label:
+    if (issue_usage)
+        Slirp_usage (15, 15, 0);
 }
 
-static void sl_cure_insert_ahead (void)
+static void
+sl_cure_insert_ahead (void)
 {
-   int arg1;
-   int issue_usage = 1;
+    int arg1;
+    int issue_usage = 1;
 
-   if (SLang_Num_Function_Args != 1) goto usage_label;
-   if (-1 == SLang_pop_int((int*)&arg1)) goto usage_label;
-   issue_usage = 0;
+    if (SLang_Num_Function_Args != 1)
+        goto usage_label;
+    if (-1 == SLang_pop_int ((int *) &arg1))
+        goto usage_label;
+    issue_usage = 0;
 
-   slang_api__cure_insert_ahead( arg1);
-   goto free_and_return;
-free_and_return:
-   /* drop */
-usage_label:
-   if (issue_usage) Slirp_usage (16, 16, 0);
+    slang_api__cure_insert_ahead (arg1);
+    goto free_and_return;
+  free_and_return:
+    /* drop */
+  usage_label:
+    if (issue_usage)
+        Slirp_usage (16, 16, 0);
 }
 
 
-static SLang_Intrin_Fun_Type slang_api_functions_Funcs [] =
-{
-   MAKE_INTRINSIC_0((char*)"set_action_hook",sl_set_action_hook,SLANG_VOID_TYPE),
-   MAKE_INTRINSIC_0((char*)"cure_backspace",sl_cure_backspace,SLANG_VOID_TYPE),
-   MAKE_INTRINSIC_0((char*)"add_new_action",sl_add_new_action,SLANG_VOID_TYPE),
-   MAKE_INTRINSIC_0((char*)"editor_map_key_to_func",sl_editor_map_key_to_func,SLANG_VOID_TYPE),
-   MAKE_INTRINSIC_0((char*)"editor_map_key_to_action",sl_editor_map_key_to_action,SLANG_VOID_TYPE),
-   MAKE_INTRINSIC_0((char*)"cure_get_eol",sl_cure_get_eol,SLANG_VOID_TYPE),
-   MAKE_INTRINSIC_0((char*)"cure_get_bol",sl_cure_get_bol,SLANG_VOID_TYPE),
-   MAKE_INTRINSIC_0((char*)"cure_delete",sl_cure_delete,SLANG_VOID_TYPE),
-   MAKE_INTRINSIC_0((char*)"cure_cursor_move",sl_cure_cursor_move,SLANG_VOID_TYPE),
-   MAKE_INTRINSIC_0((char*)"cure_cursor_offset",sl_cure_cursor_offset,SLANG_VOID_TYPE),
-   MAKE_INTRINSIC_0((char*)"listbox_with_data",sl_listbox_with_data,SLANG_VOID_TYPE),
-   MAKE_INTRINSIC_0((char*)"cure_get_left_whole_word",sl_cure_get_left_whole_word,SLANG_VOID_TYPE),
-   MAKE_INTRINSIC_0((char*)"listbox",sl_listbox,SLANG_VOID_TYPE),
-   MAKE_INTRINSIC_0((char*)"message",sl_message,SLANG_VOID_TYPE),
-   MAKE_INTRINSIC_0((char*)"listbox_auto",sl_listbox_auto,SLANG_VOID_TYPE),
-   MAKE_INTRINSIC_0((char*)"cure_get_byte",sl_cure_get_byte,SLANG_VOID_TYPE),
-   MAKE_INTRINSIC_0((char*)"cure_insert_ahead",sl_cure_insert_ahead,SLANG_VOID_TYPE),
-   SLANG_END_INTRIN_FUN_TABLE
-};   /* }}} */
+static SLang_Intrin_Fun_Type slang_api_functions_Funcs[] = {
+    MAKE_INTRINSIC_0 ((char *) "set_action_hook", sl_set_action_hook, SLANG_VOID_TYPE),
+    MAKE_INTRINSIC_0 ((char *) "cure_backspace", sl_cure_backspace, SLANG_VOID_TYPE),
+    MAKE_INTRINSIC_0 ((char *) "add_new_action", sl_add_new_action, SLANG_VOID_TYPE),
+    MAKE_INTRINSIC_0 ((char *) "editor_map_key_to_func", sl_editor_map_key_to_func,
+                      SLANG_VOID_TYPE),
+    MAKE_INTRINSIC_0 ((char *) "editor_map_key_to_action", sl_editor_map_key_to_action,
+                      SLANG_VOID_TYPE),
+    MAKE_INTRINSIC_0 ((char *) "cure_get_eol", sl_cure_get_eol, SLANG_VOID_TYPE),
+    MAKE_INTRINSIC_0 ((char *) "cure_get_bol", sl_cure_get_bol, SLANG_VOID_TYPE),
+    MAKE_INTRINSIC_0 ((char *) "cure_delete", sl_cure_delete, SLANG_VOID_TYPE),
+    MAKE_INTRINSIC_0 ((char *) "cure_cursor_move", sl_cure_cursor_move, SLANG_VOID_TYPE),
+    MAKE_INTRINSIC_0 ((char *) "cure_cursor_offset", sl_cure_cursor_offset, SLANG_VOID_TYPE),
+    MAKE_INTRINSIC_0 ((char *) "listbox_with_data", sl_listbox_with_data, SLANG_VOID_TYPE),
+    MAKE_INTRINSIC_0 ((char *) "cure_get_left_whole_word", sl_cure_get_left_whole_word,
+                      SLANG_VOID_TYPE),
+    MAKE_INTRINSIC_0 ((char *) "listbox", sl_listbox, SLANG_VOID_TYPE),
+    MAKE_INTRINSIC_0 ((char *) "message", sl_message, SLANG_VOID_TYPE),
+    MAKE_INTRINSIC_0 ((char *) "listbox_auto", sl_listbox_auto, SLANG_VOID_TYPE),
+    MAKE_INTRINSIC_0 ((char *) "cure_get_byte", sl_cure_get_byte, SLANG_VOID_TYPE),
+    MAKE_INTRINSIC_0 ((char *) "cure_insert_ahead", sl_cure_insert_ahead, SLANG_VOID_TYPE),
+    SLANG_END_INTRIN_FUN_TABLE
+};                              /* }}} */
 
-static const char* usage_strings[] = { /* {{{ */
-   "int = set_action_hook(string,string,string)",
-   "int = cure_backspace()",
-   "int = add_new_action(string,int)",
-   "int = editor_map_key_to_func(string,string,string)",
-   "int = editor_map_key_to_action(string,string)",
-   "int = cure_get_eol()",
-   "int = cure_get_bol()",
-   "int = cure_delete()",
-   "cure_cursor_move(int)",
-   "int = cure_cursor_offset()",
-   "string = listbox_with_data(int,int,string,string[],string[])",
-   "string = cure_get_left_whole_word(int)",
-   "int = listbox(int,int,string,string[])",
-   "message(string,string)",
-   "int = listbox_auto(string,string[])",
-   "int = cure_get_byte(int)",
-   "cure_insert_ahead(int)",
-NULL
-}; /* }}} */
+static const char *usage_strings[] = {  /* {{{ */
+    "int = set_action_hook(string,string,string)",
+    "int = cure_backspace()",
+    "int = add_new_action(string,int)",
+    "int = editor_map_key_to_func(string,string,string)",
+    "int = editor_map_key_to_action(string,string)",
+    "int = cure_get_eol()",
+    "int = cure_get_bol()",
+    "int = cure_delete()",
+    "cure_cursor_move(int)",
+    "int = cure_cursor_offset()",
+    "string = listbox_with_data(int,int,string,string[],string[])",
+    "string = cure_get_left_whole_word(int)",
+    "int = listbox(int,int,string,string[])",
+    "message(string,string)",
+    "int = listbox_auto(string,string[])",
+    "int = cure_get_byte(int)",
+    "cure_insert_ahead(int)",
+    NULL
+};                              /* }}} */
 
-static void Slirp_usage(int i, int last, int flags) /* {{{ */
+static void
+Slirp_usage (int i, int last, int flags)        /* {{{ */
 {
-   char *indent;
-   int npop = SLstack_depth();
-   if (npop > SLang_Num_Function_Args) npop = SLang_Num_Function_Args;
-   SLdo_pop_n(npop);
-   if (last == i)
-	indent = (char*)"Usage:  ";
-   else {
-	indent = (char*)"\t";
-	SLang_verror(SL_USAGE_ERROR, (char*)"Usage: one of");
-   }
-   do
-	SLang_verror(SL_USAGE_ERROR, (char*)"%s%s", indent, usage_strings[i++]);
-   while (i < last);
-   if (flags & 0x2)
-	SLang_verror(SL_USAGE_ERROR,
-		(char*)"\tThis function has been vectorized and parallelized.");
-   else if (flags & 0x1)
-	SLang_verror(SL_USAGE_ERROR, (char*)"\tThis function has been vectorized.");
-} /* }}} */
+    char *indent;
+    int npop = SLstack_depth ();
+    if (npop > SLang_Num_Function_Args)
+        npop = SLang_Num_Function_Args;
+    SLdo_pop_n (npop);
+    if (last == i)
+        indent = (char *) "Usage:  ";
+    else
+    {
+        indent = (char *) "\t";
+        SLang_verror (SL_USAGE_ERROR, (char *) "Usage: one of");
+    }
+    do
+        SLang_verror (SL_USAGE_ERROR, (char *) "%s%s", indent, usage_strings[i++]);
+    while (i < last);
+    if (flags & 0x2)
+        SLang_verror (SL_USAGE_ERROR,
+                      (char *) "\tThis function has been vectorized and parallelized.");
+    else if (flags & 0x1)
+        SLang_verror (SL_USAGE_ERROR, (char *) "\tThis function has been vectorized.");
+}                               /* }}} */
 
 #define SLIRP_VERSION_STRING pre2.0.0-34
 #define SLIRP_VERSION_NUMBER 20000
-SLANG_MODULE(slang_api_functions);
-int init_slang_api_functions_module_ns(char *ns_name)	/* {{{ */
+SLANG_MODULE (slang_api_functions);
+int
+init_slang_api_functions_module_ns (char *ns_name)      /* {{{ */
 {
-   SLang_NameSpace_Type *ns = NULL;
+    SLang_NameSpace_Type *ns = NULL;
 
-   if (slang_abi_mismatch()) return -1;
-   if (ns_name != NULL) {
-	ns = SLns_create_namespace (ns_name);
-       if (ns == NULL ||
-          (slns = SLmalloc(strlen(ns_name)+1)) == NULL)
-          return -1;
-       strcpy(slns, ns_name);
-   }
+    if (slang_abi_mismatch ())
+        return -1;
+    if (ns_name != NULL)
+    {
+        ns = SLns_create_namespace (ns_name);
+        if (ns == NULL || (slns = SLmalloc (strlen (ns_name) + 1)) == NULL)
+            return -1;
+        strcpy (slns, ns_name);
+    }
 
 
 #ifdef HAVE_OPAQUE_IVARS
-   if (-1 == set_opaque_ivar_types(slang_api_functions_Opaque_IVars) ||
-       -1 == SLns_add_intrin_var_table(ns,slang_api_functions_Opaque_IVars,NULL))
-	return -1;
+    if (-1 == set_opaque_ivar_types (slang_api_functions_Opaque_IVars) ||
+        -1 == SLns_add_intrin_var_table (ns, slang_api_functions_Opaque_IVars, NULL))
+        return -1;
 #endif
 
-   if (	-1 == SLns_add_intrin_fun_table (ns,slang_api_functions_Funcs,(char*)"__slang_api_functions__"))
-	return -1;
+    if (-1 ==
+        SLns_add_intrin_fun_table (ns, slang_api_functions_Funcs,
+                                   (char *) "__slang_api_functions__"))
+        return -1;
 
-   return 0;
-} /* }}} */
+    return 0;
+}                               /* }}} */

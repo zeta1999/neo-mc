@@ -53,7 +53,7 @@
 #include "lib/fileloc.h"        /* EDIT_HOME_BLOCK_FILE */
 #include "lib/vfs/vfs.h"
 #include "lib/strutil.h"        /* utf string functions */
-#include "lib/sub-util.h"           /* load_file_position(), save_file_position() */
+#include "lib/sub-util.h"       /* load_file_position(), save_file_position() */
 #include "lib/timefmt.h"        /* time formatting */
 #include "lib/lock.h"
 #include "lib/widget.h"
@@ -3911,22 +3911,22 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion)
             edit_complete_word_cmd (edit);
         break;
     case CK_SelectFunction:
-        edit_select_object_from_tags(edit, TAG_JUMP_KIND_FUNCTION_LIST);
+        edit_select_object_from_tags (edit, TAG_JUMP_KIND_FUNCTION_LIST);
         break;
     case CK_SelectVariable:
-        edit_select_object_from_tags(edit, TAG_JUMP_KIND_VAR_LIST);
+        edit_select_object_from_tags (edit, TAG_JUMP_KIND_VAR_LIST);
         break;
     case CK_SelectType:
-        edit_select_object_from_tags(edit, TAG_JUMP_KIND_TYPE_LIST);
+        edit_select_object_from_tags (edit, TAG_JUMP_KIND_TYPE_LIST);
         break;
     case CK_SelectOther:
-        edit_select_object_from_tags(edit, TAG_JUMP_KIND_OTHER_LIST);
+        edit_select_object_from_tags (edit, TAG_JUMP_KIND_OTHER_LIST);
         break;
     case CK_SelectAllKinds:
-        edit_select_object_from_tags(edit, TAG_JUMP_KIND_ANY_LIST);
+        edit_select_object_from_tags (edit, TAG_JUMP_KIND_ANY_LIST);
         break;
     case CK_Find:
-        edit_select_object_from_tags(edit, TAG_JUMP_KIND_MATCH_WORD);
+        edit_select_object_from_tags (edit, TAG_JUMP_KIND_MATCH_WORD);
         break;
 
 #ifdef HAVE_ASPELL

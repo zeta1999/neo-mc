@@ -40,7 +40,7 @@
 #include "lib/tty/tty.h"
 #include "lib/vfs/vfs.h"
 #include "lib/strutil.h"
-#include "lib/sub-util.h"           /* load_file_position() */
+#include "lib/sub-util.h"       /* load_file_position() */
 #include "lib/widget.h"
 
 #include "src/filemanager/layout.h"

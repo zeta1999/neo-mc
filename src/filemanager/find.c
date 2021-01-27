@@ -47,7 +47,7 @@
 #include "lib/vfs/vfs.h"
 #include "lib/strutil.h"
 #include "lib/widget.h"
-#include "lib/sub-util.h"           /* canonicalize_pathname() */
+#include "lib/sub-util.h"       /* canonicalize_pathname() */
 
 #include "src/setup.h"          /* verbose */
 #include "src/history.h"        /* MC_HISTORY_SHARED_SEARCH */

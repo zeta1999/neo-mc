@@ -36,7 +36,7 @@
 #include <sys/types.h>          /* size_t */
 
 #include "lib/global.h"
-#include "lib/sub-util.h"           /* whitespace() */
+#include "lib/sub-util.h"       /* whitespace() */
 
 #include "tty-slang.h"
 #include "color.h"              /* variables */

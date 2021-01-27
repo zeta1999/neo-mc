@@ -69,7 +69,7 @@
 #include "lib/global.h"
 
 #include "lib/tty/tty.h"        /* enable/disable interrupt key */
-#include "lib/sub-util.h"           /* custom_canonicalize_pathname() */
+#include "lib/sub-util.h"       /* custom_canonicalize_pathname() */
 #if 0
 #include "lib/widget.h"         /* message() */
 #endif
