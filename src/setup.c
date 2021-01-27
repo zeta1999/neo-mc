@@ -113,6 +113,9 @@ gboolean drop_menus = FALSE;
    are tagged files */
 gboolean confirm_view_dir = FALSE;
 
+/* Should MultiSearch listbox grepping be enabled by default on all lists */
+gboolean option_multisearch = FALSE;
+
 /* Ask file name before start the editor */
 gboolean editor_ask_filename_before_edit = FALSE;
 
@@ -295,6 +298,7 @@ static const struct
     { "use_internal_view", &use_internal_view },
     { "use_internal_edit", &use_internal_edit },
     { "clear_before_exec", &clear_before_exec },
+    { "multi_search_active_by_default", &option_multisearch },
     { "confirm_delete", &confirm_delete },
     { "confirm_overwrite", &confirm_overwrite },
     { "confirm_execute", &confirm_execute },

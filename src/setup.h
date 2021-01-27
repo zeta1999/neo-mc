@@ -98,6 +98,7 @@ extern gboolean auto_fill_mkdir_name;
 extern gboolean output_starts_shell;
 extern gboolean use_file_to_check_type;
 extern gboolean file_op_compute_totals;
+extern gboolean option_multisearch;
 extern gboolean editor_ask_filename_before_edit;
 
 extern panels_options_t panels_options;

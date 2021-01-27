@@ -175,6 +175,8 @@ edit_options_dialog (WDialog * h)
                     QUICK_CHECKBOX (N_("Cursor be&yond end of line"), &option_cursor_beyond_eol,
                                      NULL),
                     QUICK_CHECKBOX (N_("&Group undo"), &option_group_undo, NULL),
+                    QUICK_CHECKBOX (N_("Default use MultiS&earch"), &option_multisearch,
+                                     NULL),
                     QUICK_LABELED_INPUT (N_("Word wrap line length:"), input_label_left, wrap_length,
                                          "edit-word-wrap", &p, NULL, FALSE, FALSE, INPUT_COMPLETE_NONE),
                 QUICK_STOP_GROUPBOX,

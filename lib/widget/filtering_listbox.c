@@ -38,6 +38,7 @@
 #include <config.h>
 
 #include "lib/global.h"
+#include "src/setup.h"
 #include "lib/widget.h"
 #include "lib/tty/tty.h"
 
@@ -123,6 +124,15 @@ filt_listbox_show_multi_search_widget (WFilteringListbox * sl)
     int distance_x = w->cols > 40 ? 5 : 1, small = w->cols <= 15 ? 1 : 0;
 
     filt_listbox_make_one_line_room (sl, 1);
+
+    /* Adjust active display. */
+    if (l->pos < 0)
+        l->pos = 0;
+    if (l->pos < l->top || l->pos >= l->top + w->lines)
+        l->top = l->pos - w->lines/2 + 1;
+    if (l->top < 0)
+        l->top = 0;
+
     multi_search_in = forwarding_input_new (owner->lines - distance_y, distance_x,
                                             input_colors, w->cols - 2 - distance_x + small, "",
                                             "multi_search", INPUT_COMPLETE_NONE, w);
@@ -397,9 +407,7 @@ filt_listbox_conditionally_enable_multi_search_init (WFilteringListbox * sl)
     gboolean start_with_multi_search_active;
 
     /* Option of starting the listbox with MultiSearch pre-activated. */
-    start_with_multi_search_active =
-        mc_config_get_bool (mc_global.main_config, CONFIG_APP_SECTION,
-                            "multi_search_active_by_default", 1);
+    start_with_multi_search_active = option_multisearch;
 
     /* CK_MultiSearch toggles the state. */
     if (start_with_multi_search_active)

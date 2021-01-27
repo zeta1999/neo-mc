@@ -571,6 +571,7 @@ configure_box (void)
                 QUICK_START_GROUPBOX (N_("Other options")),
                     QUICK_CHECKBOX (N_("Use internal edi&t"), &use_internal_edit, NULL),
                     QUICK_CHECKBOX (N_("Use internal vie&w"), &use_internal_view, NULL),
+                    QUICK_CHECKBOX (N_("Default use MultiSearch"), &option_multisearch, NULL),
                     QUICK_CHECKBOX (N_("A&sk new file name"),
                                     &editor_ask_filename_before_edit, NULL),
                     QUICK_CHECKBOX (N_("Auto m&enus"), &auto_menu, NULL),
