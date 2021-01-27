@@ -478,6 +478,12 @@ static const global_keymap_ini_t default_editor_keymap[] = {
     {"Sort", "alt-t"},
     {"Mail", "alt-m"},
     {"ExternalCommand", "alt-u"},
+    {"WindowMove", "ctrl-alt-e"},
+    {"WindowResize", "ctrl-alt-s"},
+    {"WindowFullscreen", "ctrl-alt-f"},
+    {"WindowList", "ctrl-alt-l"},
+    {"WindowNext", "shift-alt-n"},
+    {"WindowPrev", "shift-alt-p"},
     {"WindowCascade", "ctrl-alt-c"},
     {"WindowTile", "ctrl-alt-t"},
 #ifdef HAVE_ASPELL
