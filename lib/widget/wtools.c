@@ -319,7 +319,7 @@ display_postponed_messages ()
         postponed_msg_t *msg = (postponed_msg_t *) it->data;
 
         /* Show the dialog with the saved message body and flags. */
-        message (msg->flags, msg->title, msg->text);
+        message (msg->flags, msg->title, "%s", msg->text);
 
         /* Release the fields of the struct. */
         g_free (msg->title);
