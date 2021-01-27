@@ -1,4 +1,4 @@
-# ━͠━ ⋱Neo⋱ Midnight Commander ━͠━
+# ━͞━ ⋱Neo⋱ Midnight Commander ━͞━
 
 Welcome to the ⋱Neo⋱-MC project! The goals of it are to:
 
