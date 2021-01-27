@@ -12,5 +12,5 @@ define capitalize() {
 }
 
 % Map the function capitalize() to the Alt-c key.
-mc->editor_map_key_to_func("Capitalize","alt-c","capitalize");
+mc->editor_map_key_to_func("Capitalize","alt-shift-c","capitalize");
 
