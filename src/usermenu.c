@@ -578,7 +578,6 @@ ork as
             tty_raw_mode ();
 
             /* Redraw the original screen's contents. */
-            clr_scr ();
             repaint_screen ();
 
             if (!ok)
