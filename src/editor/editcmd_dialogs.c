@@ -400,7 +400,7 @@ editcmd_dialog_completion_show (const WEdit * edit, int max_len, GString ** comp
         listbox_add_item (lw, LISTBOX_APPEND_AT_END, 0, (char *) compl[i]->str, NULL, FALSE);
 
     /* Set widgets size after possible duplicates removal. */
-    num_compl = listbox_get_length (compl_list);
+    num_compl = listbox_get_length (LISTBOX(compl_list));
     if (num_compl < compl_dlg_h - 2)
     {
         WIDGET (compl_list)->lines = num_compl;
@@ -432,7 +432,8 @@ editcmd_dialog_select_tags_object_show (WEdit * edit, char *match_expr, int max_
     gboolean found_current = FALSE;
     char *curr = NULL;
     WDialog *func_dlg;
-    WListbox *func_list;
+    WFilteringListbox *func_list;
+    WListbox *listbox;
     int func_dlg_h;             /* dialog height */
     int func_dlg_w;             /* dialog width */
     etags_hash_t *selection_data = NULL;
@@ -460,8 +461,9 @@ editcmd_dialog_select_tags_object_show (WEdit * edit, char *match_expr, int max_
 
     func_dlg = dlg_create (TRUE, start_y, start_x, func_dlg_h, func_dlg_w, WPOS_KEEP_DEFAULT, TRUE,
                            dialog_colors, NULL, NULL, "[Definitions]", match_expr);
-    func_list = listbox_new (1, 1, func_dlg_h - 2, func_dlg_w - 2, FALSE, NULL);
+    func_list = filtering_listbox_new (1, 1, func_dlg_h - 2, func_dlg_w - 2, FALSE, NULL, FILT_LIST_DIALOG_AUTO_RESIZE);
     group_add_widget (GROUP (func_dlg), func_list);
+    listbox = LISTBOX(func_list);
 
     /* fill the listbox with the completions */
     for (i = 0; i < num_lines; i++)
@@ -476,7 +478,7 @@ editcmd_dialog_select_tags_object_show (WEdit * edit, char *match_expr, int max_
                                  all_found[i].line);
         else
             label = g_strdup ("error");
-        listbox_add_item (func_list, LISTBOX_APPEND_AT_END, 0, label, &all_found[i], FALSE);
+        listbox_add_item (listbox, LISTBOX_APPEND_AT_END, 0, label, &all_found[i], FALSE);
         g_free (label);
 
         /* Detect currently active code segment. */
@@ -487,11 +489,11 @@ editcmd_dialog_select_tags_object_show (WEdit * edit, char *match_expr, int max_
         }
     }
     if (found_current)
-        listbox_select_entry (func_list, selected_on_start);
+        listbox_select_entry (listbox, selected_on_start);
 
     /* pop up the dialog and apply the chosen completion */
     if (dlg_run (func_dlg) == B_ENTER)
-        listbox_get_current (func_list, &curr, (void **) &selection_data);
+        listbox_get_current (listbox, &curr, (void **) &selection_data);
 
     /* destroy dialog before return */
     dlg_destroy (func_dlg);
