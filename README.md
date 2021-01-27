@@ -49,15 +49,28 @@ will be positioned in the middle of the screen (i.e.: the viewport will be scrol
 
 ## Window Cascading And Tiling
 
-When Ctrl-Alt-c will be pressed then all windows with opened files will exit fullscreen and be 
+When Ctrl-Alt-c will be pressed then all windows with opened files will exit fullscreen and be
 automatically arranged in a cascade. Ctrl-Alt-t arranges them in a tiling configuration.
 
 Also, new options `-w/--cascade` and `-T,--tile` will make the editor to start up with the
-selected arrangement.
+selected arrangement. Also, there are a two new entries added to the `Window` sub-menu.
 
+## S-Lang Scripting support.
 
+The already linked `libslang.so` contains a robust, light scripting language interpreter. This fork
+utilizes it (and the excelent C ↔ script binding generator [Slirp](https://space.mit.edu/cxc/slirp/))
+to provide a compact, light scripting support for Midnight Commander. The API is currently yet small
+and focused on the editor, however it'll grow. A PDF containing a description of current interface
+functions is [available](https://github.com/neo-mc/neo-mc/blob/master/doc/slang_api.pdf).
 
+There are 3 example plugins in subdirectory `misc/`:
+- capitalize.plugin.sl – capitalizes the current word (alt-shift-c),
+- commentify.plugin.sl – wraps current line with `/*` and `*/` (alt-i),
+- grow_shrink_integer.plugin.sl – adds the Vim well known growing and decreasing of a number under
+  cursor (Alt-a and Alt-x).
 
+To use them, place them in `~/.config/mc/plugin` directory. Also an `init.sl` file is being loaded
+at startup – it should be placed in the directory (`~/.config/mc/`).
 
 
 
