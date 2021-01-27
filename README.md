@@ -70,7 +70,8 @@ There are 3 example plugins in subdirectory `misc/`:
   cursor (Alt-a and Alt-x).
 
 To use them, place them in `~/.config/mc/plugin` directory. Also an `init.sl` file is being loaded
-at startup – it should be placed in the directory (`~/.config/mc/`).
+at startup – it should be placed in the directory: `/usr/local/etc/mc/init.sl` (or
+`/etc/mc/init.sl`, depending on the installation prefix).
 
 
 
