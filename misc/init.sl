@@ -22,6 +22,15 @@ define listbox_display_function() {
     return 1;
 }
 
+define action_funct() {
+    variable ret;
+    ret = mc->action("GrowInteger");
+    ret += 10*mc->action("Up");
+    ret += 100*mc->action(3);
+    mc->message("GrowInteger and 2x Up, return values:", string(ret));
+    return ret;
+}
+
 % A function causing runtime error:
 define divide_by_zero() {
     variable string = "Divided by 0 on purpose";
@@ -47,3 +56,4 @@ mc->editor_map_key_to_func("DivBy0Action", "ctrl-t", "a_function");
 
 % Show a listbox on Alt-y:
 mc->editor_map_key_to_func("ListboxAction", "alt-y", "listbox_display_function");
+mc->editor_map_key_to_func("ActionFunct", "ctrl-alt-y", "action_funct");
