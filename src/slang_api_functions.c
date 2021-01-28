@@ -56,6 +56,23 @@
 /*** file scope functions ************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 
+/* Gets the main dialog object. */
+static WDialog *
+get_curdial (void)
+{
+    GList *dialog = top_dlg;
+
+    /* Search first fullscreen dialog */
+    for (; dialog != NULL; dialog = g_list_next (dialog))
+        if ((WIDGET (dialog->data)->pos_flags & WPOS_FULLSCREEN) != 0)
+            break;
+
+    /* Can be NULL */
+    return dialog ? DIALOG(dialog->data) : NULL;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
 /* Gets  current editor object. */
 static WEdit *
 get_cure (void)
@@ -108,6 +125,56 @@ update_editor_keymaps (global_keymap_t * keymap)
 /* --------------------------------------------------------------------------------------------- */
 /*** public functions ****************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
+
+/*
+ * S-LANG FUNCTION: action(name_or_id)
+ * RETURN VALUE: true if the action has been recognized and handled
+ *
+ * Executes given action ↔ a CK_ enum command (or a dynamically added, e.g.: via script
+ * or via a keymap file). It can be given in two ways: either as its name (via string –
+ * action_name argument) or as its CK_ enum integer code (action_code arg).
+ *
+ * So this SLang function utilizes an #argmap (slirprc) to be able to obtain and handle
+ * a single argument of TWO TYPES » string and integer – which are automatically passed
+ * to the second and third argument of this C implementation function.
+ */
+int
+slang_api__action(void *ARRAY_2_VOIDP, char *action_name, long action_code)
+{
+    WDialog *h;
+    cb_ret_t ret;
+    (void) ARRAY_2_VOIDP; /* Unused (already read by glue code / argmap) */
+
+    h = get_curdial();
+    if (!h)
+        /* Couldn't execute the action » no main dialog widget found. */
+        return FALSE;
+
+    /* Action given by a string name? */
+    if (action_name != NULL) {
+        long resolved;
+        resolved = keybind_lookup_action(action_name);
+        if (resolved == CK_IgnoreKey)
+            return FALSE;
+        action_code = resolved;
+    }
+
+    /*
+     * Got the CK code at this point, either from string name or directly passed.
+     * Invoke the topmost message interpreting function, then WEdit's sub-callback,
+     * if needed, with the MSG_ACTION message and the action code as its variable.
+     */
+    ret = edit_dialog_callback(WIDGET(h), NULL, MSG_ACTION, action_code, NULL);
+    if (ret == MSG_NOT_HANDLED)
+    {
+        GList *cur = GROUP(h)->current;
+        WEdit *e = (WEdit *) cur != NULL ? cur->data : NULL;
+        if (!e)
+            return FALSE;
+        ret = edit_execute_key_command(e, action_code, -1);
+    }
+    return (ret == MSG_HANDLED);
+}
 
 /*
  * S-LANG FUNCTION: _cure_cursor_move(offset)

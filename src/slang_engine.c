@@ -289,7 +289,7 @@ slang_plugins_init (void)
 
 /* A function that looks up the command associated S-Lang code callback. */
 GSList *
-get_command_callback (int ck_id)
+get_action_hook (int ck_id)
 {
     GSList *value = g_hash_table_lookup (action_hook_functions, GINT_TO_POINTER (ck_id));
     return value;

@@ -11,6 +11,9 @@
 
 /*** declarations of public functions ************************************************************/
 
+/* Control functions */
+int slang_api__action(void *ARRAY_2_VOIDP, char *action_name, long action_code);
+
 /* Movement functions */
 void slang_api__cure_cursor_move (int offset);
 

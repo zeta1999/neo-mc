@@ -167,5 +167,8 @@ struct WEdit
 
 /*** declarations of public functions ************************************************************/
 
+cb_ret_t edit_dialog_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm,
+                                      void *data);
+
 /*** inline functions ****************************************************************************/
 #endif /* MC__EDIT_WIDGET_H */

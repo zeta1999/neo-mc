@@ -108,6 +108,9 @@ edit_stack_type edit_history_moveto[MAX_HISTORY_MOVETO];
 const char VERTICAL_MAGIC[] = { '\1', '\1', '\1', '\1', '\n' };
 
 /*** file scope macro definitions ****************************************************************/
+#define REPEAT_1(...) __VA_ARGS__
+#define REPEAT_2(...) REPEAT_1(__VA_ARGS__), REPEAT_1(__VA_ARGS__)
+#define REPEAT_4(...) REPEAT_2(__VA_ARGS__), REPEAT_2(__VA_ARGS__)
 
 #define TEMP_BUF_LEN 1024
 
@@ -3214,16 +3217,17 @@ edit_find_bracket (WEdit * edit)
  * inserted at the cursor.
  */
 
-void
+cb_ret_t
 edit_execute_key_command (WEdit * edit, long command, int char_for_insertion)
 {
+    cb_ret_t ret = MSG_HANDLED;
     if (command == CK_MacroStartRecord || command == CK_RepeatStartRecord
         || (macro_index < 0
             && (command == CK_MacroStartStopRecord || command == CK_RepeatStartStopRecord)))
     {
         macro_index = 0;
         edit->force |= REDRAW_CHAR_ONLY | REDRAW_LINE;
-        return;
+        return ret;
     }
     if (macro_index != -1)
     {
@@ -3232,13 +3236,13 @@ edit_execute_key_command (WEdit * edit, long command, int char_for_insertion)
         {
             edit_store_macro_cmd (edit);
             macro_index = -1;
-            return;
+            return ret;
         }
         if (command == CK_RepeatStopRecord || command == CK_RepeatStartStopRecord)
         {
             edit_repeat_macro_cmd (edit);
             macro_index = -1;
-            return;
+            return ret;
         }
     }
 
@@ -3251,9 +3255,11 @@ edit_execute_key_command (WEdit * edit, long command, int char_for_insertion)
     if (command != CK_Undo && command != CK_ExtendedKeyMap)
         edit_push_key_press (edit);
 
-    edit_execute_cmd (edit, command, char_for_insertion);
+    ret = edit_execute_cmd (edit, command, char_for_insertion);
     if (edit->column_highlight)
         edit->force |= REDRAW_PAGE;
+
+    return ret;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -3263,13 +3269,15 @@ edit_execute_key_command (WEdit * edit, long command, int char_for_insertion)
    that if it is called many times, a single undo command will undo
    all of them. It also does not check for the Undo command.
  */
-void
+cb_ret_t
 edit_execute_cmd (WEdit * edit, long command, int char_for_insertion)
 {
+    cb_ret_t ret[9] = { REPEAT_4(MSG_HANDLED), REPEAT_4(MSG_HANDLED), MSG_HANDLED };
     Widget *w = WIDGET (edit);
     GSList *slang_code = NULL;
     /* Check if the command is a S-Lang script registered command */
-    if ((slang_code = get_command_callback (command)) != NULL)
+    slang_code = get_action_hook (command);
+    if (slang_code != NULL)
     {
         int ret_api, ret_api2 = -1, ret_fun = 0;
         ret_api = SLang_execute_function (slang_code->data);
@@ -3289,18 +3297,23 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion)
                 SLang_set_error (0);
             }
         }
-        if (ret_api <= 0 || ret_api2 <= 0 || !ret_fun)
-            return;
+        if (ret_api <= 0 || ret_api2 <= 0)
+            return ret[0];
+        if (ret_fun == 0)
+            return ret[0];
     }
     if (command == CK_WindowFullscreen)
     {
         edit_toggle_fullscreen (edit);
-        return;
+        return ret[0];
     }
 
     /* handle window state */
     if (edit_handle_move_resize (edit, command))
-        return;
+        return ret[0];
+
+    /* No match in first set of actions. */
+    ret[0] = MSG_NOT_HANDLED;
 
     edit->force |= REDRAW_LINE;
 
@@ -3352,6 +3365,8 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion)
 
         /* any other command */
     default:
+        /* No match in second set of actions. */
+        ret[1] = MSG_NOT_HANDLED;
         if (edit->highlight)
             edit_mark_cmd (edit, FALSE);        /* clear */
         edit->highlight = 0;
@@ -3365,7 +3380,7 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion)
         edit->found_len = 0;
         edit->prev_col = edit_get_col (edit);
         edit->search_start = edit->buffer.curs1;
-        return;
+        return ret[2];
     }
     /*  check for redo */
     if (command == CK_Redo)
@@ -3375,7 +3390,7 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion)
         edit->found_len = 0;
         edit->prev_col = edit_get_col (edit);
         edit->search_start = edit->buffer.curs1;
-        return;
+        return ret[2];
     }
 
     edit->redo_stack_reset = 1;
@@ -3443,8 +3458,11 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion)
         edit->prev_col = edit_get_col (edit);
         edit->search_start = edit->buffer.curs1;
         edit_find_bracket (edit);
-        return;
+        return ret[2];
     }
+
+    /* No match in third set of actions. */
+    ret[2] = MSG_NOT_HANDLED;
 
     switch (command)
     {
@@ -3471,6 +3489,8 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion)
         }
         break;
     default:
+        /* Mark no match occurred. */
+        ret[3] = MSG_NOT_HANDLED;
         break;
     }
 
@@ -3500,6 +3520,8 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion)
         edit->force |= REDRAW_CHAR_ONLY;
         break;
     default:
+        /* Mark no match occurred. */
+        ret[4] = MSG_NOT_HANDLED;
         break;
     }
 
@@ -3996,6 +4018,8 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion)
         w->ext_mode = TRUE;
         break;
     default:
+        /* Mark no match occurred. */
+        ret[5] = MSG_NOT_HANDLED;
         break;
     }
 
@@ -4045,6 +4069,8 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion)
         edit->found_len = 0;
         break;
     default:
+        /* Mark no match occurred. */
+        ret[7] = MSG_NOT_HANDLED;
         edit->found_len = 0;
         edit->prev_col = edit_get_col (edit);
         edit->search_start = edit->buffer.curs1;
@@ -4065,9 +4091,13 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion)
             edit->force |= REDRAW_PAGE;
             break;
         default:
+            /* Mark no match occurred. */
+            ret[8] = MSG_NOT_HANDLED;
             break;
         }
     }
+    /* Return if any case/if examination ended positively. */
+    return ret[0] | ret[1] | ret[2] | ret[3] | ret[4] | ret[5] | ret[7] | ret[8];
 }
 
 /* --------------------------------------------------------------------------------------------- */

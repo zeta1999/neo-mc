@@ -228,7 +228,7 @@ void edit_date_cmd (WEdit * edit);
 void edit_goto_cmd (WEdit * edit);
 gboolean eval_marks (WEdit * edit, off_t * start_mark, off_t * end_mark);
 void edit_status (WEdit * edit, gboolean active);
-void edit_execute_key_command (WEdit * edit, long command, int char_for_insertion);
+cb_ret_t edit_execute_key_command (WEdit * edit, long command, int char_for_insertion);
 void edit_update_screen (WEdit * edit);
 void edit_save_size (WEdit * edit);
 gboolean edit_handle_move_resize (WEdit * edit, long command);
@@ -281,7 +281,7 @@ void edit_mail_dialog (WEdit * edit);
 void format_paragraph (WEdit * edit, gboolean force);
 
 /* either command or char_for_insertion must be passed as -1 */
-void edit_execute_cmd (WEdit * edit, long command, int char_for_insertion);
+cb_ret_t edit_execute_cmd (WEdit * edit, long command, int char_for_insertion);
 
 /*** inline functions ****************************************************************************/
 
