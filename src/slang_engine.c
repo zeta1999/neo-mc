@@ -43,6 +43,7 @@
 #include "lib/widget.h"
 #include "lib/widget/wtools.h"
 #include "lib/sub-util.h"
+#include "lib/logging.h"
 #include "src/slang_engine.h"
 #include "src/filemanager/fman-dir.h"
 #include "src/util.h"
@@ -58,7 +59,6 @@ GHashTable *action_hook_functions = NULL;
 
 /*** file scope variables ************************************************************************/
 
-static int mc_loglevel = 0;
 static GString *last_error = NULL;
 static char *last_fname = NULL;
 
@@ -142,6 +142,7 @@ int
 slang_init_engine (void)
 {
     vfs_path_t *slang_init_vpath, *slang_init_vpath_system;
+    long mc_loglevel = mc_global.log_level;
 
     /* Handler for the (generated first) basic error message. */
     SLang_Error_Hook = slang_error_handler;
@@ -162,7 +163,7 @@ slang_init_engine (void)
 
     /* Add `mc_loglevel` variable that controls execution information messages. */
     if (-1 == SLadd_intrinsic_variable ((char *) "mc_loglevel",
-                                        (VOID_STAR) & mc_loglevel, SLANG_INT_TYPE, 0))
+                                        (VOID_STAR) & mc_global.log_level, SLANG_LONG_TYPE, 0))
     {
         postponed_message (D_ERROR, "MC Plugin Subsystem Error", "%s\n%s",
                            "Couldn't add mc_loglevel to S-Lang interpreter.",
@@ -179,6 +180,12 @@ slang_init_engine (void)
         mc_config_get_full_vpath(MC_SLANG_INIT_FILE);
     check_for_default(slang_init_vpath_system, slang_init_vpath);
 
+    /*
+     * The loglevel can be set most early via environment (MC_LOGLEVEL), and later
+     * but still quite early in init.sl.
+     */
+    if (mc_loglevel >= 2)
+        mc_always_log("Loading slang init script from: %s", vfs_path_as_str(slang_init_vpath));
 
     /* Source `init.sl` into the S-Lang interpreter. */
     if (-1 == SLang_load_file ((char *) vfs_path_as_str(slang_init_vpath)))
@@ -186,13 +193,20 @@ slang_init_engine (void)
         /* Clear the error and reset the interpreter */
         SLang_restart (1);
         SLang_set_error (0);
+        /* Refresh the helper var in case its origin changed. */
+        mc_loglevel = mc_global.log_level;
         if (mc_loglevel >= 2)
+            mc_always_log("Couldn't load init.sl startup script.");
+        if (mc_loglevel >= 3)
             postponed_message (D_ERROR, "MC Plugin Subsystem Error",
                                "Couldn't load init.sl startup script.");
     }
     else
     {
+        mc_loglevel = mc_global.log_level;
         if (mc_loglevel >= 2)
+            mc_always_log("Correctly loaded init.sl startup script.");
+        if (mc_loglevel >= 3)
             postponed_message (D_NORMAL, "MC Plugin Subsystem",
                                "Correctly loaded init.sl startup script.");
     }
@@ -204,6 +218,7 @@ slang_init_engine (void)
 int
 slang_plugins_init (void)
 {
+    long mc_loglevel = mc_global.log_level;
     int ret = TRUE,             /* Default is OK return value */
         i;
     const char *plugin_dir_path;
@@ -245,20 +260,24 @@ slang_plugins_init (void)
             /* Error occurred: clear the error and reset the interpreter. */
             SLang_restart (1);
             SLang_set_error (0);
-
-            if (mc_loglevel >= 2)
+            /* Refresh local loglevel in case its origin was changed by  script. */
+            mc_loglevel = mc_global.log_level;
+            if (mc_loglevel >= 3)
                 postponed_message (D_ERROR, "MC Plugin Subsystem", "Couldn't load the plugin: %s",
                                    pl_path);
-
+            if (mc_loglevel >= 2)
+                mc_always_log("Warning: Couldn't load plugin: %s", pl_path);
             ret = FALSE;
         }
         else
         {
-
+            mc_loglevel = mc_global.log_level;
             /* Report if the loglevel is 2 or more. */
             if (mc_loglevel >= 2)
                 postponed_message (D_NORMAL, "MC Plugin Subsystem", "Plugin: %s loaded correctly",
                                    pl_path);
+            if (mc_loglevel >= 2)
+                mc_always_log("Plugin %s loaded correctly", pl_path);
         }
         g_free (pl_path);
     }

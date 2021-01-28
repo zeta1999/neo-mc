@@ -48,6 +48,7 @@
 
 /* *INDENT-OFF* */
 mc_global_t mc_global = {
+    .log_level = 1,
     .mc_run_mode = MC_RUN_FULL,
     .run_from_parent_mc = FALSE,
     .midnight_shutdown = FALSE,

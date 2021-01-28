@@ -5,7 +5,7 @@
 % for a reference on the language.
 
 % Increase to 2 to have confirmation messages after loading this script and other plugins.
-mc_loglevel=1;
+%mc_loglevel=3;
 
 % A function showing a listbox:
 define listbox_display_function() {

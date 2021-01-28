@@ -243,6 +243,55 @@ check_sid (void)
 }
 
 /* --------------------------------------------------------------------------------------------- */
+
+static long
+util_get_pos_integer_from_str(const char *src_name, const char *dst_name, const char *num_str)
+{
+    char *endptr = NULL;
+    long log_l, ret = LONG_MAX;
+    int errno_save;
+    if (num_str == NULL)
+        return ret;
+
+    /* Do the conversion to long. */
+    errno = 0;
+    log_l = strtol(num_str, &endptr, 10);
+    errno_save = errno;
+
+    /* All chars processed? */
+    if (endptr && endptr[0] == '\0')
+    {
+        /* Empty input string ? */
+        if (num_str[0] == '\0')
+            mc_always_log("Warning: an empty %s, setting the %s to %ld.", src_name, dst_name, log_l);
+
+        /* Read value lower than 0 ? */
+        if (log_l < 0)
+            mc_always_log("Error: %s cannot be lower than 0 (read: %ld)", src_name, log_l);
+        /* Read a correct value → save and return it. */
+        else if (errno_save == 0)
+            ret = log_l;
+    /* No → signal error. */
+    } else {
+        gboolean has_digits = (endptr != num_str);
+        mc_always_log("%s has non digit chars: `%s%s`, ignoring its value "
+            "(read: %s%.0ld%s)…",
+              src_name,
+              endptr != num_str ? "…" : "", endptr,
+              has_digits && log_l == 0 ? "0" : "",
+              has_digits ? log_l : 0L,
+              !has_digits ? "no value" : "");
+    }
+
+    /* `errno` error information set? If yes, then (also) print its description. */
+    if (errno_save != 0)
+        mc_always_log("An error during %s conversion occurred: `%s`, value for %s ignored.",
+            src_name, g_strerror(errno_save), dst_name);
+
+    return ret;
+}
+
+/* --------------------------------------------------------------------------------------------- */
 /*** public functions ****************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 
@@ -253,6 +302,7 @@ main (int argc, char *argv[])
     gboolean config_migrated = FALSE;
     char *config_migrate_msg = NULL;
     int exit_code = EXIT_FAILURE;
+    char *env_loglevel_str;
 
     mc_global.run_from_parent_mc = !check_sid ();
 
@@ -263,6 +313,16 @@ main (int argc, char *argv[])
     (void) bindtextdomain (PACKAGE, LOCALEDIR);
     (void) textdomain (PACKAGE);
 
+    /* Set the loglevel via environment variable $MC_LOGLEVEL. */
+    env_loglevel_str = g_strdup(getenv("MC_LOGLEVEL"));
+    if (env_loglevel_str != NULL)
+    {
+        long log_l;
+        log_l = util_get_pos_integer_from_str("$MC_LOGLEVEL", "MC log level", env_loglevel_str);
+        if (log_l != LONG_MAX)
+            mc_global.log_level = log_l;
+    }
+    g_free(env_loglevel_str); /* g_free is NULL-safe, no need to check */
     /* do this before args parsing */
     str_init_strings (NULL);
 

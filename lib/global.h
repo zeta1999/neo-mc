@@ -163,6 +163,11 @@ typedef enum
 
 typedef struct
 {
+    /*
+     * Controls amount of messages on current state. The messages can be logs to mc.log (>=2), and
+     * also dialogs on screen (>=3).
+     */
+    long log_level;
     mc_run_mode_t mc_run_mode;
     gboolean run_from_parent_mc;
     /* Used so that widgets know if they are being destroyed or shut down */
