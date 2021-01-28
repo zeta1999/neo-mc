@@ -14,6 +14,17 @@
 
 /*** typedefs(not structures) and defined constants **********************************************/
 
+/* *INDENT-OFF* */
+#ifdef USE_MAINTAINER_MODE
+void mc_log (const char *fmt, ...) G_GNUC_PRINTF (1, 2);
+void mc_always_log (const char *fmt, ...) G_GNUC_PRINTF (1, 2);
+#else
+/* Use printf() to silence the unused variable warnings. */
+#define mc_log(fmt,...) do { if(0) printf(fmt, ##__VA_ARGS__);  } while(0)
+#define mc_always_log(fmt,...) do { if(0) printf(fmt, ##__VA_ARGS__); } while(0)
+#endif
+/* *INDENT-ON* */
+
 #define mc_log_mark() mc_log("%s:%d",__FILE__,__LINE__)
 
 /*** enums ***************************************************************************************/
@@ -23,16 +34,6 @@
 /*** global variables defined in .c file *********************************************************/
 
 /*** declarations of public functions ************************************************************/
-
-/* *INDENT-OFF* */
-#ifdef USE_MAINTAINER_MODE
-void mc_log (const char *fmt, ...) G_GNUC_PRINTF (1, 2);
-void mc_always_log (const char *fmt, ...) G_GNUC_PRINTF (1, 2);
-#else
-#define mc_log(x,...) do { } while(0);
-#define mc_always_log(x,...) do { } while(0);
-#endif
-/* *INDENT-ON* */
 
 /*** inline functions ****************************************************************************/
 

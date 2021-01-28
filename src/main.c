@@ -55,6 +55,7 @@
 #include "lib/strutil.h"
 #include "lib/sub-util.h"
 #include "lib/vfs/vfs.h"        /* vfs_init(), vfs_shut() */
+#include "lib/logging.h"
 
 #include "filemanager/filemanager.h"
 #include "filemanager/treestore.h"      /* tree_store_save */
