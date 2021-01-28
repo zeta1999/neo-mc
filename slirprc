@@ -42,3 +42,34 @@
 % Not working, have to use the command line -rename option as it understands `NULL`.
 %#rename slang_api__ NULL
 %#rename keybind_ NULL
+
+
+% Allow a function (action()) to be called with either string or an integer as its first
+% argument and omit the last two. String is an action name (like "EditFile"), while integer
+% is the CK_ enum code.
+#argmap(in, which=1, proxy=SLang_Array_Type) (void *ARRAY_2_VOIDP, char *action_name, long action_code)
+    {
+        /* Called with string argument? */
+        if (proxy->data_type == SLANG_STRING_TYPE) {
+            $2 = *((char**)proxy->data);
+            $3 = -1;
+        } else {
+            /* It's certain that no string will be passed. */
+            $2 = NULL;
+            /* Called with a long argument? */
+            if (proxy->data_type == SLANG_LONG_TYPE)
+                $3 = *((long*)proxy->data);
+            /* Called with an integer argument? */
+            else if (proxy->data_type == SLANG_INT_TYPE)
+                $3 = *((int*)proxy->data);
+            /* Unknown type passed as argument – signal/mark the error with a special value. */
+            else
+                $3 = 0xbadc0de;
+        }
+        /*
+         * The first parameter is only a placeholder of the void * arbitrary type argument
+         * on S-Lang side, it's unused on C side.
+         */
+        $1 = 0;
+    }
+#end
