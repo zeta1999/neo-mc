@@ -7,9 +7,14 @@
 % Increase to 2 to have confirmation messages after loading this script and other plugins.
 %mc_loglevel=3;
 
+define util_get_value_field(s) {
+    return s.value;
+}
 % A function showing a listbox:
 define listbox_display_function() {
-    variable items, i;
+    variable items, items2, i, count;
+
+    % Show all functions in the `mc` namespace.
     items = _apropos("mc",".*",0xF);
     i = array_sort(items);
     items = items[i];
@@ -17,6 +22,18 @@ define listbox_display_function() {
 
     if (sel >= 0)
         mc->message("You have selected:", "item #" + string(sel+1) + ": " + items[sel]);
+    else
+        mc->message("Info", "No selection have been made");
+
+    % Show all preprocessor symbols that exist.
+    count = __get_defined_symbols();
+    items = __pop_args (count);
+    items2 = array_map(String_Type, &util_get_value_field, items);
+
+    sel = mc->listbox(15, 55, "S-Lang interpreter defined macros:", items2);
+
+    if (sel >= 0)
+        mc->message("You have selected:", "item #" + string(sel+1) + ": " + items2[sel]);
     else
         mc->message("Info", "No selection have been made");
 
