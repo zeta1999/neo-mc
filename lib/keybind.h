@@ -117,6 +117,7 @@ enum
     CK_Store,
     CK_Cut,
     CK_Paste,
+    CK_ClipboardHistory,
     CK_MarkLeft,
     CK_MarkRight,
     CK_MarkUp,

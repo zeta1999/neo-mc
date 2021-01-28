@@ -86,9 +86,6 @@ static unsigned int edit_dlg_init_refcounter = 0;
 
 /*** file scope functions ************************************************************************/
 
-cb_ret_t edit_dialog_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm,
-                                      void *data);
-
 /* --------------------------------------------------------------------------------------------- */
 /**
  * Init the 'edit' subsystem

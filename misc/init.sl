@@ -9,10 +9,11 @@
 
 % A function showing a listbox:
 define listbox_display_function() {
-    variable items = ["This is a listbox", "It's displayed from…",
-        "…`init.sl` S-Lang startup script"];
-
-    variable sel = mc->listbox(5, 35, "Welcome",items);
+    variable items, i;
+    items = _apropos("mc",".*",0xF);
+    i = array_sort(items);
+    items = items[i];
+    variable sel = mc->listbox(15, 35, "Welcome! S-Lang API (exported) functions:", items);
 
     if (sel >= 0)
         mc->message("You have selected:", "item #" + string(sel+1) + ": " + items[sel]);
