@@ -74,6 +74,7 @@ static const struct
 
     /* Plugins (S-Lang scripting). */
     { "plugin",                              &mc_config_str, MC_PLUGIN_DIR },
+    { "init.sl",                             &mc_config_str, MC_SLANG_INIT_FILE },
 
     /* User should move this file with applying some changes in file */
     { "",                                    &mc_config_str, MC_FILEBIND_FILE },

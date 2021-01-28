@@ -43,9 +43,9 @@
 #include "lib/widget.h"
 #include "lib/widget/wtools.h"
 #include "lib/sub-util.h"
-
 #include "src/slang_engine.h"
 #include "src/filemanager/fman-dir.h"
+#include "src/util.h"
 
 /*** global variables ****************************************************************************/
 
@@ -141,7 +141,7 @@ int init_slang_api_functions_module_ns (char *ns_name);
 int
 slang_init_engine (void)
 {
-    const char *slang_init_path;
+    vfs_path_t *slang_init_vpath, *slang_init_vpath_system;
 
     /* Handler for the (generated first) basic error message. */
     SLang_Error_Hook = slang_error_handler;
@@ -173,11 +173,15 @@ slang_init_engine (void)
     init_slang_api_functions_module_ns ((char *) "mc");
 
     /* Establish path to the init.sl file. */
-    slang_init_path =
-        mc_build_filename (mc_global.sysconfig_dir, MC_SLANG_INIT_FILE, (char *) NULL);
+    slang_init_vpath_system =
+        vfs_path_build_filename (mc_global.sysconfig_dir, MC_SLANG_INIT_FILE, (char *) NULL);
+    slang_init_vpath =
+        mc_config_get_full_vpath(MC_SLANG_INIT_FILE);
+    check_for_default(slang_init_vpath_system, slang_init_vpath);
+
 
     /* Source `init.sl` into the S-Lang interpreter. */
-    if (-1 == SLang_load_file ((char *) slang_init_path))
+    if (-1 == SLang_load_file ((char *) vfs_path_as_str(slang_init_vpath)))
     {
         /* Clear the error and reset the interpreter */
         SLang_restart (1);
