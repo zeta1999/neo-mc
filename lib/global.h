@@ -148,6 +148,42 @@
 
 #define DEFAULT_CHARSET "ASCII"
 
+#define has_flag(x,y) (((x) & P_MSG_PRIME_FLAGS_APPLIED) == 0 && ((x) & (y)) != 0)
+#define has_pflag(x,y) (((x) & P_MSG_PRIME_FLAGS_APPLIED) != 0 && ((x) % (y)) == 0)         /* Modulo/y is 0 if y is a factor of the number */
+#define has_flag_check_both(x,y) (has_flag(x,y) || has_pflag(x,P_##y))
+/* The EM_… prefix stands for "embedded" – a second parm argument embedded in upper 16
+ * bits of the original parm. It can be either a 14 bit integer, or 5 flags, or the
+ * continulation of the base `parm` – a 30 bit integer, when 31 and 32 bits are set */
+#define GET_EM_PARM(x) ((has_flag(x,P_MSG_PRIME_FLAGS_APPLIED) && \
+                        has_flag(x,PARAM_ON_UPPER_14_BITS)) ? ((x) & ~(PARAM_ON_UPPER_14_BITS | \
+                            P_MSG_PRIME_FLAGS_APPLIED)) : \
+                ((!has_flag(x,P_MSG_PRIME_FLAGS_APPLIED) && \
+                        has_flag(x,PARAM_ON_UPPER_14_BITS)) ? \
+                                (((x)&~PARAM_ON_UPPER_14_BITS) >> 16) : ((x) & 0xffff0000)))
+/* Gets either 30 bits or 16 bits from input `parm` depending on the two top bits in it */
+#define GET_BASE_PARAM(x) ((has_flag(x,P_MSG_PRIME_FLAGS_APPLIED) && \
+                        has_flag(x,PARAM_ON_UPPER_14_BITS)) ? ((x) & ~(PARAM_ON_UPPER_14_BITS | \
+                            P_MSG_PRIME_FLAGS_APPLIED)) : ((x) & 0xffff))
+/*
+ * A check if parm holds only a single value that uses 30, not 16 bits. It still has to be
+ * unpacked ↔ cleared from the meta-data flags by GET_BASE_PARAM macro.
+ */
+#define PARAM_IS_WHOLE(x) (has_flag(x,P_MSG_PRIME_FLAGS_APPLIED) && \
+                        has_flag(x,PARAM_ON_UPPER_14_BITS))
+#define EM_PARM_IS_FLAGS(x) (((x) & 0xffff0000) != 0)
+#define EM_PARM_IS_INTEGER(x) (((x) & 0xffff) != 0)
+/* A de-facto, empiric check if the number is above 16 bits */
+#define EM_PARM_IS_WHOLE(x) ((((x) & 0xffff) != 0) && (((x) & 0xffff0000) != 0))
+#define PARM_DATA int parm, void *data
+/* Compose the packed `parm` again to pass it to functions in single argument 0 */
+#define PASS_DATA1 (EM_PARM_IS_WHOLE(parm_embedded) ? (parm | P_MSG_PRIME_FLAGS_APPLIED | \
+            PARAM_ON_UPPER_14_BITS) : (parm | ((EM_PARM_IS_INTEGER(parm_embedded) ? \
+                ((parm_embedded << 16) | PARAM_ON_UPPER_14_BITS) : parm_embedded)))), data
+#define PASS_DATA parm, data
+#define PASS_DATAPTR parm, dataptr
+#define PASS_DATAPTR1 (parm | (EM_PARM_IS_INTEGER(parm_embedded) ? ((parm_embedded << 16) | \
+                     PARAM_ON_UPPER_14_BITS) : parm_embedded)), dataptr
+
 /*** enums ***************************************************************************************/
 
 /* run mode and params */
@@ -158,6 +194,37 @@ typedef enum
     MC_RUN_VIEWER,
     MC_RUN_DIFFVIEWER
 } mc_run_mode_t;
+
+/* special values for `parm` argument in callback functions */
+typedef enum
+{
+    /* The sign of the flags, required for them to be recognized */
+    PARM_FLAG_SGN = -1,
+
+    /* PRIME NUMBERS METHOD */
+    P_NO_VALUE_MSG_PARAM      =  3 << 16,         /* prime numbers */
+    P_MSG_DATA_PTR_GIVEN      =  5 << 16,
+    P_MSG_DATA_LONG_GIVEN     =  7 << 16,
+    P_MSG_FORCE_HANDLED       =  11 << 16,
+    P_MSG_FORCE_NOT_HANDLED   =  13 << 16,
+    P_PARAM_HAS_CUSTOM_FLAGS  =  17 << 16,
+    P_MSG_PRIME_FLAGS_APPLIED =  1 << 31,
+
+    /* POWER OF 2 FLAGS METHOD */
+    NO_VALUE_MSG_PARAM       =  -(1 << 0),    /* This enum means that there is no other information */
+
+    /* THE PROPER FLAGS (used when `parm` used to change behavior of callbacks, not pass a value) */
+    MSG_DATA_PTR_GIVEN       =  1 << 25,
+    MSG_DATA_LONG_GIVEN      =  1 << 26,
+    MSG_FORCE_HANDLED        =  1 << 27,
+    MSG_FORCE_NOT_HANDLED    =  1 << 28,
+    PARAM_HAS_CUSTOM_FLAGS   =  1 << 29,
+
+    /* SPECIAL FLAG (used to indicate an integer ·data· packed in `parm`) */
+    PARAM_ON_UPPER_14_BITS   =  1 << 30       /* Max 14 bit integer can be packed in `parm` –
+                                               * it's 16 minus 1 for P_MSG_PRIME_FLAGS_APPLIED
+                                               * and also for this flag itself. */
+} meta_data_param_flags_t;
 
 /*** structures declarations (and typedefs of structures)*****************************************/
 
@@ -178,6 +245,9 @@ typedef struct
     char *sysconfig_dir;
     /* share_data_dir: Area for default settings from developers */
     char *share_data_dir;
+
+    /* Currently active mcedit_<id>.clip file. From which text is loaded (write is to id+1 % 10) */
+    unsigned char cur_clip_id;
 
     mc_config_t *main_config;
     mc_config_t *panels_config;

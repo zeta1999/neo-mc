@@ -55,7 +55,8 @@ mc_global_t mc_global = {
 
     .sysconfig_dir = NULL,
     .share_data_dir = NULL,
-
+    .cur_clip_id = 1,
+    
 #ifdef HAVE_CHARSET
     .source_codepage = -1,
     .display_codepage = -1,

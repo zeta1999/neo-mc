@@ -95,7 +95,7 @@ exec_edit_syntax_dialog (const GPtrArray * names, const char *current_syntax)
 /* --------------------------------------------------------------------------------------------- */
 
 void
-edit_syntax_dialog (WEdit * edit)
+edit_syntax_dialog (WEdit * edit, PARM_DATA)
 {
     GPtrArray *names;
     int syntax;

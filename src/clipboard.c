@@ -61,8 +61,79 @@ static const mode_t clip_open_mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
 /*** file scope functions ************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 
+
 /* --------------------------------------------------------------------------------------------- */
 /*** public functions ****************************************************************************/
+/* --------------------------------------------------------------------------------------------- */
+
+char *
+clipboard_get_indexed_clip_path(unsigned char clip_id)
+{
+    char *template, *filled;
+    template = mc_config_get_full_path (EDIT_HOME_INDEXED_CLIP_FILE);
+    filled = g_strdup_printf(template, (int) clip_id);
+    g_free(template);
+    return filled;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+char *
+helper_peek_first_byte_and_select(unsigned char *data_first_byte, unsigned char global_clip_id)
+{
+    char *clip_path;
+    unsigned char clip_id = global_clip_id;
+
+    /* The data is empty or it isn't a path? */
+    if (data_first_byte == NULL || data_first_byte[0] != '/') {
+        /*
+         * Is it a valid clip index? If yes, then override the mc_global value and use this
+         * index coming from MSG_ACTION's data
+         */
+        if (data_first_byte != NULL && data_first_byte[0] < 47 && data_first_byte[0] != '\0')
+            clip_id = data_first_byte[0];
+
+        clip_path = clipboard_get_indexed_clip_path(clip_id);
+    } else
+        /* Note: it's MSG_ACTION that obtained an alternate path, to a clip file */
+        clip_path = g_strdup((char*) data_first_byte); 
+
+    return clip_path;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+gboolean
+clipboard_save_cur_clip_id(unsigned char clip_id)
+{
+    char *txt_id;
+    size_t str_len;
+    vfs_path_t *fname_vpath;
+    int file;
+
+    if (clip_id == 0)
+        clip_id ++;
+
+    fname_vpath = mc_config_get_full_vpath (EDIT_HOME_CUR_CLIP_ID_FILE);
+    file = mc_open (fname_vpath, clip_open_flags, clip_open_mode);
+    vfs_path_free (fname_vpath);
+
+    if (file == -1)
+        return FALSE;
+
+    /* Text buffer that will be written to disk */
+    txt_id = g_strdup_printf("%d\n",(int)clip_id);
+    str_len = strlen (txt_id);
+    {
+        ssize_t ret;
+        ret = mc_write (file, txt_id, str_len);
+        (void) ret;
+    }
+
+    mc_close (file);
+    g_free(txt_id);
+    return TRUE;
+}
+
 /* --------------------------------------------------------------------------------------------- */
 
 /* event callback */
@@ -71,16 +142,13 @@ clipboard_file_to_ext_clip (const gchar * event_group_name, const gchar * event_
                             gpointer init_data, gpointer data)
 {
     char *tmp, *cmd;
-
     (void) event_group_name;
     (void) event_name;
     (void) init_data;
-    (void) data;
 
     if (clipboard_store_path == NULL || clipboard_store_path[0] == '\0')
         return TRUE;
-
-    tmp = mc_config_get_full_path (EDIT_HOME_CLIP_FILE);
+    tmp = helper_peek_first_byte_and_select(data, mc_global.cur_clip_id);
     cmd = g_strconcat (clipboard_store_path, " ", tmp, " 2>/dev/null", (char *) NULL);
 
     if (cmd != NULL)
@@ -104,7 +172,6 @@ clipboard_file_from_ext_clip (const gchar * event_group_name, const gchar * even
     (void) event_group_name;
     (void) event_name;
     (void) init_data;
-    (void) data;
 
     if (clipboard_paste_path == NULL || clipboard_paste_path[0] == '\0')
         return TRUE;
@@ -142,10 +209,15 @@ clipboard_file_from_ext_clip (const gchar * event_group_name, const gchar * even
 
             if (file < 0)
             {
+                char *fname;
                 vfs_path_t *fname_vpath;
 
-                fname_vpath = mc_config_get_full_vpath (EDIT_HOME_CLIP_FILE);
+                fname = helper_peek_first_byte_and_select(data, mc_global.cur_clip_id);
+                fname_vpath = vfs_path_from_str(fname);
+                g_free(fname);
+
                 file = mc_open (fname_vpath, clip_open_flags, clip_open_mode);
+                /* Immediately free vfs object */
                 vfs_path_free (fname_vpath);
 
                 if (file < 0)
@@ -176,6 +248,7 @@ clipboard_text_to_file (const gchar * event_group_name, const gchar * event_name
     vfs_path_t *fname_vpath = NULL;
     size_t str_len;
     const char *text = (const char *) data;
+    char *fname;
 
     (void) event_group_name;
     (void) event_name;
@@ -184,7 +257,10 @@ clipboard_text_to_file (const gchar * event_group_name, const gchar * event_name
     if (text == NULL)
         return FALSE;
 
-    fname_vpath = mc_config_get_full_vpath (EDIT_HOME_CLIP_FILE);
+    fname = helper_peek_first_byte_and_select(data, mc_global.cur_clip_id);
+    fname_vpath = vfs_path_from_str(fname);
+    g_free(fname);
+
     file = mc_open (fname_vpath, clip_open_flags, clip_open_mode);
     vfs_path_free (fname_vpath);
 
@@ -219,7 +295,7 @@ clipboard_text_from_file (const gchar * event_group_name, const gchar * event_na
     (void) event_name;
     (void) init_data;
 
-    fname = mc_config_get_full_path (EDIT_HOME_CLIP_FILE);
+    fname = mc_config_get_full_path (EDIT_HOME_MAIN_CLIP_FILE);
     f = fopen (fname, "r");
     g_free (fname);
 

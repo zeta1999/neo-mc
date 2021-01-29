@@ -361,9 +361,9 @@ format_this (unsigned char *t, off_t size, long indent, gboolean utf8)
 static inline void
 replace_at (WEdit * edit, off_t q, int c)
 {
-    edit_cursor_move (edit, q - edit->buffer.curs1);
-    edit_delete (edit, TRUE);
-    edit_insert_ahead (edit, c);
+    edit_cursor_move (edit, q - edit->buffer.curs1, NO_VALUE_MSG_PARAM, NULL);
+    edit_delete (edit, TRUE, NO_VALUE_MSG_PARAM, NULL);
+    edit_insert_ahead (edit, c, NO_VALUE_MSG_PARAM, NULL);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -389,12 +389,12 @@ edit_insert_indent (WEdit * edit, long indent)
     if (!option_fill_tabs_with_spaces)
         while (indent >= TAB_SIZE)
         {
-            edit_insert (edit, '\t');
+            edit_insert (edit, '\t', NO_VALUE_MSG_PARAM, NULL);
             indent -= TAB_SIZE;
         }
 
     while (indent-- > 0)
-        edit_insert (edit, ' ');
+        edit_insert (edit, ' ', NO_VALUE_MSG_PARAM, NULL);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -424,7 +424,7 @@ put_paragraph (WEdit * edit, unsigned char *t, off_t p, long indent, off_t size)
             {
                 off_t curs;
 
-                edit_cursor_move (edit, p - edit->buffer.curs1);
+                edit_cursor_move (edit, p - edit->buffer.curs1, NO_VALUE_MSG_PARAM, NULL);
                 curs = edit->buffer.curs1;
                 edit_insert_indent (edit, indent);
                 if (cursor >= curs)
@@ -433,10 +433,10 @@ put_paragraph (WEdit * edit, unsigned char *t, off_t p, long indent, off_t size)
             }
             else if (c == '\n')
             {
-                edit_cursor_move (edit, p - edit->buffer.curs1);
+                edit_cursor_move (edit, p - edit->buffer.curs1, NO_VALUE_MSG_PARAM, NULL);
                 while (strchr ("\t ", edit_buffer_get_byte (&edit->buffer, p)) != NULL)
                 {
-                    edit_delete (edit, TRUE);
+                    edit_delete (edit, TRUE, NO_VALUE_MSG_PARAM, NULL);
                     if (cursor > edit->buffer.curs1)
                         cursor--;
                 }
@@ -448,7 +448,7 @@ put_paragraph (WEdit * edit, unsigned char *t, off_t p, long indent, off_t size)
         if (c != t[i])
             replace_at (edit, p, t[i]);
     }
-    edit_cursor_move (edit, cursor - edit->buffer.curs1);       /* restore cursor position */
+    edit_cursor_move (edit, cursor - edit->buffer.curs1, NO_VALUE_MSG_PARAM, NULL);       /* restore cursor position */
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -474,7 +474,7 @@ test_indent (const WEdit * edit, off_t p, off_t q)
 /* --------------------------------------------------------------------------------------------- */
 
 void
-format_paragraph (WEdit * edit, gboolean force)
+format_paragraph (WEdit * edit, gboolean force, PARM_DATA)
 {
     off_t p, q;
     long lines;

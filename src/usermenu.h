@@ -19,7 +19,7 @@
 
 /*** declarations of public functions ************************************************************/
 
-gboolean user_menu_cmd (const WEdit * edit_widget, const char *menu_file, int selected_entry);
+gboolean user_menu_cmd (const WEdit * edit_widget, const char *menu_file, int selected_entry, PARM_DATA);
 char *expand_format (const WEdit * edit_widget, char c, gboolean do_quote);
 int check_format_view (const char *);
 int check_format_var (const char *, char **);

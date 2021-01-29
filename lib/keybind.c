@@ -127,6 +127,7 @@ static name_keymap_t command_names_start[] = {
     ADD_KEYMAP_NAME (DeleteToEnd),
     ADD_KEYMAP_NAME (DeleteToWordBegin),
     ADD_KEYMAP_NAME (DeleteToWordEnd),
+    ADD_KEYMAP_NAME (ClipHistory),
     ADD_KEYMAP_NAME (Cut),
     ADD_KEYMAP_NAME (Store),
     ADD_KEYMAP_NAME (Paste),

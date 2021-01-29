@@ -303,7 +303,7 @@ edit_window_leave_fullscreen_resize (Widget * w, int y, int x, int lines, int co
         WEdit *e = (WEdit *) w;
         WRect resize_rect;
         if (e->fullscreen)
-            edit_toggle_fullscreen (e);
+            edit_toggle_fullscreen (e, NO_VALUE_MSG_PARAM, NULL);
         rect_init (&resize_rect, y, x, lines, cols);
         e->force |= REDRAW_COMPLETELY;
         send_message (WIDGET (e), NULL, MSG_RESIZE, 0, &resize_rect);
@@ -497,7 +497,7 @@ edit_get_title (const WDialog * h, size_t len)
 /* --------------------------------------------------------------------------------------------- */
 
 static cb_ret_t
-edit_dialog_command_execute (WDialog * h, long command)
+edit_dialog_command_execute (WDialog * h, long command, PARM_DATA)
 {
     WGroup *g = GROUP (h);
     Widget *wh = WIDGET (h);
@@ -509,21 +509,21 @@ edit_dialog_command_execute (WDialog * h, long command)
         edit_add_window (h, wh->y + 1, wh->x, wh->lines - 2, wh->cols, NULL, 0);
         break;
     case CK_EditFile:
-        edit_load_cmd (h);
+        edit_load_cmd (h, PASS_DATA);
         break;
     case CK_History:
-        edit_load_file_from_history (h);
+        edit_load_file_from_history (h, PASS_DATA);
         break;
     case CK_EditSyntaxFile:
-        edit_load_syntax_file (h);
+        edit_load_syntax_file (h, PASS_DATA);
         break;
     case CK_EditUserMenu:
-        edit_load_menu_file (h);
+        edit_load_menu_file (h, PASS_DATA);
         break;
     case CK_Close:
         /* if there are no opened files anymore, close MC editor */
         if (edit_widget_is_editor (CONST_WIDGET (g->current->data)) &&
-            edit_close_cmd ((WEdit *) g->current->data) && find_editor (h) == NULL)
+            edit_close_cmd ((WEdit *) g->current->data, PASS_DATA) && find_editor (h) == NULL)
             dlg_stop (h);
         break;
     case CK_Help:
@@ -549,16 +549,16 @@ edit_dialog_command_execute (WDialog * h, long command)
         edit_about ();
         break;
     case CK_SyntaxOnOff:
-        edit_syntax_onoff_cmd (h);
+        edit_syntax_onoff_cmd (h, PASS_DATA);
         break;
     case CK_ShowTabTws:
-        edit_show_tabs_tws_cmd (h);
+        edit_show_tabs_tws_cmd (h, PASS_DATA);
         break;
     case CK_ShowMargin:
-        edit_show_margin_cmd (h);
+        edit_show_margin_cmd (h, PASS_DATA);
         break;
     case CK_ShowNumbers:
-        edit_show_numbers_cmd (h);
+        edit_show_numbers_cmd (h, PASS_DATA);
         break;
     case CK_Refresh:
         edit_refresh_cmd ();
@@ -728,7 +728,7 @@ edit_translate_key (WEdit * edit, long x_key, int *cmd, int *ch)
 /* --------------------------------------------------------------------------------------------- */
 
 static inline void
-edit_quit (WDialog * h)
+edit_quit (WDialog * h, PARM_DATA)
 {
     GList *l;
     WEdit *e = NULL;
@@ -763,7 +763,7 @@ edit_quit (WDialog * h)
 
         widget_select (WIDGET (e));
 
-        if (!edit_ok_to_exit (e))
+        if (!edit_ok_to_exit (e, PASS_DATA))
             break;
     }
 
@@ -798,7 +798,7 @@ edit_set_buttonbar (WEdit * edit, WButtonBar * bb)
 static void
 edit_total_update (WEdit * edit)
 {
-    edit_find_bracket (edit);
+    edit_find_bracket (edit, NO_VALUE_MSG_PARAM, NULL);
     edit->force |= REDRAW_COMPLETELY;
     edit_update_curs_row (edit);
     edit_update_screen (edit);
@@ -819,7 +819,7 @@ edit_update_cursor (WEdit * edit, const mouse_event_t * event)
         return TRUE;            /* don't do anything */
 
     if (event->msg == MSG_MOUSE_DOWN || event->msg == MSG_MOUSE_UP)
-        edit_push_key_press (edit);
+        edit_push_key_press (edit, NO_VALUE_MSG_PARAM, NULL);
 
     if (!option_cursor_beyond_eol)
         edit->prev_col = x - edit->start_col - option_line_state_width;
@@ -844,21 +844,21 @@ edit_update_cursor (WEdit * edit, const mouse_event_t * event)
     }
 
     if (y > edit->curs_row)
-        edit_move_down (edit, y - edit->curs_row, FALSE);
+        edit_move_down (edit, y - edit->curs_row, FALSE, NO_VALUE_MSG_PARAM, NULL);
     else if (y < edit->curs_row)
-        edit_move_up (edit, edit->curs_row - y, FALSE);
+        edit_move_up (edit, edit->curs_row - y, FALSE, NO_VALUE_MSG_PARAM, NULL);
     else
-        edit_move_to_prev_col (edit, edit_buffer_get_current_bol (&edit->buffer));
+        edit_move_to_prev_col (edit, edit_buffer_get_current_bol (&edit->buffer), NO_VALUE_MSG_PARAM, NULL);
 
     if (event->msg == MSG_MOUSE_CLICK)
     {
-        edit_mark_cmd (edit, TRUE);     /* reset */
+        edit_mark_cmd (edit, TRUE, NO_VALUE_MSG_PARAM, NULL);     /* reset */
         edit->highlight = 0;
     }
 
     done = (event->msg != MSG_MOUSE_DRAG);
     if (done)
-        edit_mark_cmd (edit, FALSE);
+        edit_mark_cmd (edit, FALSE, NO_VALUE_MSG_PARAM, NULL);
 
     return done;
 }
@@ -889,7 +889,7 @@ edit_dialog_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, v
 
             cb_ret_t result;
 
-            result = edit_dialog_command_execute (h, parm);
+            result = edit_dialog_command_execute (h, parm, PASS_DATA);
 
             /* We forward any commands coming from the menu, and which haven't been
                handled by the dialog, to the focused WEdit window. */
@@ -918,7 +918,7 @@ edit_dialog_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, v
                     we->ext_mode = FALSE;
                 else
                 {
-                    ret = edit_dialog_command_execute (h, command);
+                    ret = edit_dialog_command_execute (h, command, PASS_DATA);
                     /* if command was not handled, keep the extended mode
                        for the further key processing */
                     if (ret == MSG_HANDLED)
@@ -943,7 +943,7 @@ edit_dialog_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, v
         return edit_drop_hotkey_menu (h, parm) ? MSG_HANDLED : MSG_NOT_HANDLED;
 
     case MSG_VALIDATE:
-        edit_quit (h);
+        edit_quit (h, PASS_DATA);
         return MSG_HANDLED;
 
     case MSG_END:
@@ -1010,7 +1010,7 @@ edit_dialog_mouse_callback (Widget * w, mouse_msg_t msg, mouse_event_t * event)
 
                 /* Handle buttons */
                 if (event->x - x <= 2)
-                    edit_toggle_fullscreen (e);
+                    edit_toggle_fullscreen (e, NO_VALUE_MSG_PARAM, NULL);
                 else
                     send_message (h, NULL, MSG_ACTION, CK_Close, NULL);
 
@@ -1057,32 +1057,33 @@ static cb_ret_t
 edit_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *data)
 {
     WEdit *e = (WEdit *) w;
+    cb_ret_t ret = MSG_HANDLED;
 
     switch (msg)
     {
     case MSG_FOCUS:
         edit_set_buttonbar (e, find_buttonbar (DIALOG (w->owner)));
-        return MSG_HANDLED;
+        return ret;
 
     case MSG_DRAW:
         e->force |= REDRAW_COMPLETELY;
         edit_update_screen (e);
-        return MSG_HANDLED;
+        return ret;
 
     case MSG_KEY:
         {
             int cmd, ch;
-            cb_ret_t ret = MSG_NOT_HANDLED;
+            ret = MSG_NOT_HANDLED;
 
             /* The user may override the access-keys for the menu bar. */
-            if (macro_index == -1 && edit_execute_macro (e, parm))
+            if (macro_index == -1 && edit_execute_macro (e, parm, PASS_DATA))
             {
                 edit_update_screen (e);
                 ret = MSG_HANDLED;
             }
             else if (edit_translate_key (e, parm, &cmd, &ch))
             {
-                edit_execute_key_command (e, cmd, ch);
+                edit_execute_key_command (e, cmd, ch, PASS_DATA);
                 edit_update_screen (e);
                 ret = MSG_HANDLED;
             }
@@ -1092,9 +1093,10 @@ edit_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *da
 
     case MSG_ACTION:
         /* command from menubar or buttonbar */
-        edit_execute_key_command (e, parm, -1);
+        /* ta funkcja ma w nazwie "key", ale to jest ta funkcja, która wykonuje większość akcji */
+        edit_execute_key_command (e, parm, -1, PASS_DATA);
         edit_update_screen (e);
-        return MSG_HANDLED;
+        return ret;
 
     case MSG_CURSOR:
         {
@@ -1105,16 +1107,16 @@ edit_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *da
                 e->curs_col + e->start_col + e->over_col;
 
             widget_gotoyx (w, y, x);
-            return MSG_HANDLED;
+            return ret;
         }
 
     case MSG_IDLE:
         edit_update_screen (e);
-        return MSG_HANDLED;
+        return ret;
 
     case MSG_DESTROY:
-        edit_clean (e);
-        return MSG_HANDLED;
+        edit_clean (e, PASS_DATA);
+        return ret;
 
     default:
         return widget_default_callback (w, sender, msg, parm, data);
@@ -1136,7 +1138,7 @@ edit_mouse_handle_move_resize (Widget * w, mouse_msg_t msg, mouse_event_t * even
     if (msg == MSG_MOUSE_UP)
     {
         /* Exit move/resize mode. */
-        edit_execute_cmd (edit, CK_Enter, -1);
+        edit_execute_cmd (edit, CK_Enter, -1, NO_VALUE_MSG_PARAM, NULL);
         edit_update_screen (edit);      /* Paint the buttonbar over our possibly overlapping frame. */
         return;
     }
@@ -1232,7 +1234,7 @@ edit_mouse_callback (Widget * w, mouse_msg_t msg, mouse_event_t * event)
                 else
                 {
                     /* start window move */
-                    edit_execute_cmd (edit, CK_WindowMove, -1);
+                    edit_execute_cmd (edit, CK_WindowMove, -1, NO_VALUE_MSG_PARAM, NULL);
                     edit_update_screen (edit);  /* Paint the buttonbar over our possibly overlapping frame. */
                     edit->drag_state_start = event->x;
                 }
@@ -1242,7 +1244,7 @@ edit_mouse_callback (Widget * w, mouse_msg_t msg, mouse_event_t * event)
             if (event->y == w->lines - 1 && event->x == w->cols - 1)
             {
                 /* bottom-right corner -- start window resize */
-                edit_execute_cmd (edit, CK_WindowResize, -1);
+                edit_execute_cmd (edit, CK_WindowResize, -1, NO_VALUE_MSG_PARAM, NULL);
                 break;
             }
         }
@@ -1260,21 +1262,21 @@ edit_mouse_callback (Widget * w, mouse_msg_t msg, mouse_event_t * event)
             if (event->x >= close_x - 1 && event->x <= close_x + 1)
                 send_message (w->owner, NULL, MSG_ACTION, CK_Close, NULL);
             else if (event->x >= toggle_fullscreen_x - 1 && event->x <= toggle_fullscreen_x + 1)
-                edit_toggle_fullscreen (edit);
+                edit_toggle_fullscreen (edit, NO_VALUE_MSG_PARAM, NULL);
             else if (!edit->fullscreen && event->count == GPM_DOUBLE)
                 /* double click on top line (toggle fullscreen) */
-                edit_toggle_fullscreen (edit);
+                edit_toggle_fullscreen (edit, NO_VALUE_MSG_PARAM, NULL);
         }
         else if (event->count == GPM_DOUBLE)
         {
             /* double click */
-            edit_mark_current_word_cmd (edit);
+            edit_mark_current_word_cmd (edit, NO_VALUE_MSG_PARAM, NULL);
             edit_total_update (edit);
         }
         else if (event->count == GPM_TRIPLE)
         {
             /* triple click: works in GPM only, not in xterm */
-            edit_mark_current_line_cmd (edit);
+            edit_mark_current_line_cmd (edit, NO_VALUE_MSG_PARAM, NULL);
             edit_total_update (edit);
         }
         break;
@@ -1285,12 +1287,12 @@ edit_mouse_callback (Widget * w, mouse_msg_t msg, mouse_event_t * event)
         break;
 
     case MSG_MOUSE_SCROLL_UP:
-        edit_move_up (edit, 2, TRUE);
+        edit_move_up (edit, 2, TRUE, NO_VALUE_MSG_PARAM, NULL);
         edit_total_update (edit);
         break;
 
     case MSG_MOUSE_SCROLL_DOWN:
-        edit_move_down (edit, 2, TRUE);
+        edit_move_down (edit, 2, TRUE, NO_VALUE_MSG_PARAM, NULL);
         edit_total_update (edit);
         break;
 
@@ -1502,7 +1504,7 @@ edit_add_window (WDialog * h, int y, int x, int lines, int cols, const vfs_path_
     WEdit *edit;
     Widget *w;
 
-    edit = edit_init (NULL, y, x, lines, cols, f, fline);
+    edit = edit_init (NULL, y, x, lines, cols, f, fline, NO_VALUE_MSG_PARAM, NULL);
     if (edit == NULL)
         return FALSE;
 
@@ -1644,7 +1646,7 @@ edit_handle_move_resize (WEdit * edit, long command)
  */
 
 void
-edit_toggle_fullscreen (WEdit * edit)
+edit_toggle_fullscreen (WEdit * edit, PARM_DATA)
 {
     Widget *w = WIDGET (edit);
 

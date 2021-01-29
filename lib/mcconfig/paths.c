@@ -80,22 +80,24 @@ static const struct
     { "",                                    &mc_config_str, MC_FILEBIND_FILE },
 
     /* data */
-    { "skins",                               &mc_data_str, MC_SKINS_DIR },
-    { "fish",                                &mc_data_str, FISH_PREFIX },
-    { "ashrc",                               &mc_data_str, "ashrc" },
-    { "bashrc",                              &mc_data_str, "bashrc" },
-    { "inputrc",                             &mc_data_str, "inputrc" },
-    { "extfs.d",                             &mc_data_str, MC_EXTFS_DIR },
-    { "history",                             &mc_data_str, MC_HISTORY_FILE },
-    { "filepos",                             &mc_data_str, MC_FILEPOS_FILE },
-    { "cedit" PATH_SEP_STR "cooledit.clip",  &mc_data_str, EDIT_HOME_CLIP_FILE },
-    { "",                                    &mc_data_str, MC_MACRO_FILE },
+    { "skins",                                 &mc_data_str, MC_SKINS_DIR },
+    { "fish",                                  &mc_data_str, FISH_PREFIX },
+    { "ashrc",                                 &mc_data_str, "ashrc" },
+    { "bashrc",                                &mc_data_str, "bashrc" },
+    { "inputrc",                               &mc_data_str, "inputrc" },
+    { "extfs.d",                               &mc_data_str, MC_EXTFS_DIR },
+    { "history",                               &mc_data_str, MC_HISTORY_FILE },
+    { "filepos",                               &mc_data_str, MC_FILEPOS_FILE },
+    { "cedit" PATH_SEP_STR "cooledit.clip",    &mc_data_str, EDIT_HOME_MAIN_CLIP_FILE },
+    { "cedit" PATH_SEP_STR "cooledit-%d.clip", &mc_data_str, EDIT_HOME_INDEXED_CLIP_FILE },
+    { "cedit" PATH_SEP_STR "cooledit.clip_id", &mc_data_str, EDIT_HOME_CUR_CLIP_ID_FILE },
+    { "",                                      &mc_data_str, MC_MACRO_FILE },
 
     /* cache */
-    { "log",                                 &mc_cache_str, "mc.log" },
-    { "Tree",                                &mc_cache_str, MC_TREESTORE_FILE },
-    { "cedit" PATH_SEP_STR "cooledit.temp",  &mc_cache_str, EDIT_HOME_TEMP_FILE },
-    { "cedit" PATH_SEP_STR "cooledit.block", &mc_cache_str, EDIT_HOME_BLOCK_FILE },
+    { "log",                                   &mc_cache_str, "mc.log" },
+    { "Tree",                                  &mc_cache_str, MC_TREESTORE_FILE },
+    { "cedit" PATH_SEP_STR "cooledit.temp",    &mc_cache_str, EDIT_HOME_TEMP_FILE },
+    { "cedit" PATH_SEP_STR "cooledit.block",   &mc_cache_str, EDIT_HOME_BLOCK_FILE },
 
     {NULL, NULL, NULL}
     /* *INDENT-ON* */
@@ -116,10 +118,10 @@ static const struct
     { &mc_data_str, EDIT_HOME_SYNTAX_FILE, &mc_config_str },
     { &mc_data_str, EDIT_HOME_MENU,        &mc_config_str },
 
-    { &mc_cache_str, MC_PANELS_FILE,       &mc_config_str },
-    { &mc_cache_str, MC_HISTORY_FILE,      &mc_data_str },
-    { &mc_cache_str, MC_FILEPOS_FILE,      &mc_data_str },
-    { &mc_cache_str, EDIT_HOME_CLIP_FILE,  &mc_data_str },
+    { &mc_cache_str, MC_PANELS_FILE,            &mc_config_str },
+    { &mc_cache_str, MC_HISTORY_FILE,           &mc_data_str },
+    { &mc_cache_str, MC_FILEPOS_FILE,           &mc_data_str },
+    { &mc_cache_str, EDIT_HOME_MAIN_CLIP_FILE,  &mc_data_str },
 
     { NULL, NULL, NULL }
     /* *INDENT-ON* */

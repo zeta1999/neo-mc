@@ -426,7 +426,7 @@ test_line (const WEdit * edit_widget, char *p, const char *begin, gboolean * res
 /** FIXME: recode this routine on version 3.0, it could be cleaner */
 
 static void
-execute_menu_command (const WEdit * edit_widget, const char *commands, gboolean show_prompt)
+execute_menu_command (const WEdit * edit_widget, const char *commands, gboolean show_prompt, PARM_DATA)
 {
     FILE *cmd_file;
     int cmd_file_fd;
@@ -949,10 +949,10 @@ expand_format (const WEdit * edit_widget, char c, gboolean do_quote)
  */
 
 gboolean
-user_menu_cmd (const WEdit * edit_widget, const char *menu_file, int selected_entry)
+user_menu_cmd (const WEdit * edit_widget, const char *menu_file, int selected_entry, PARM_DATA)
 {
     char *p;
-    char *data, **entries;
+    char *umdata, **entries;
     int max_cols, menu_lines, menu_limit;
     int col, i;
     gboolean accept_entry = TRUE;
@@ -1012,7 +1012,7 @@ user_menu_cmd (const WEdit * edit_widget, const char *menu_file, int selected_en
         }
     }
 
-    if (!g_file_get_contents (menu, &data, NULL, NULL))
+    if (!g_file_get_contents (menu, &umdata, NULL, NULL))
     {
         message (D_ERROR, MSG_ERROR, _("Cannot open file %s\n%s"), menu, unix_error_string (errno));
         MC_PTR_FREE (menu);
@@ -1026,7 +1026,7 @@ user_menu_cmd (const WEdit * edit_widget, const char *menu_file, int selected_en
 
     /* Parse the menu file */
     old_patterns = easy_patterns;
-    p = check_patterns (data);
+    p = check_patterns (umdata);
     for (menu_lines = col = 0; *p != '\0'; str_next_char (&p))
     {
         if (menu_lines >= menu_limit)
@@ -1059,14 +1059,14 @@ user_menu_cmd (const WEdit * edit_widget, const char *menu_file, int selected_en
                 if (*(p + 1) == '=')
                 {
                     /* Combined adding and default */
-                    p = test_line (edit_widget, p + 1, data, &accept_entry);
+                    p = test_line (edit_widget, p + 1, umdata, &accept_entry);
                     if (selected == 0 && accept_entry)
                         selected = menu_lines;
                 }
                 else
                 {
                     /* A condition for adding the entry */
-                    p = test_line (edit_widget, p, data, &accept_entry);
+                    p = test_line (edit_widget, p, umdata, &accept_entry);
                 }
                 break;
 
@@ -1074,7 +1074,7 @@ user_menu_cmd (const WEdit * edit_widget, const char *menu_file, int selected_en
                 if (*(p + 1) == '+')
                 {
                     /* Combined adding and default */
-                    p = test_line (edit_widget, p + 1, data, &accept_entry);
+                    p = test_line (edit_widget, p + 1, umdata, &accept_entry);
                     if (selected == 0 && accept_entry)
                         selected = menu_lines;
                 }
@@ -1082,7 +1082,7 @@ user_menu_cmd (const WEdit * edit_widget, const char *menu_file, int selected_en
                 {
                     /* A condition for making the entry default */
                     i = 1;
-                    p = test_line (edit_widget, p, data, &i);
+                    p = test_line (edit_widget, p, umdata, &i);
                     if (selected == 0 && i != 0)
                         selected = menu_lines;
                 }
@@ -1150,7 +1150,7 @@ user_menu_cmd (const WEdit * edit_widget, const char *menu_file, int selected_en
         }
         if (selected >= 0)
         {
-            execute_menu_command (edit_widget, entries[selected], interactive);
+            execute_menu_command (edit_widget, entries[selected], interactive, PASS_DATA);
             res = TRUE;
         }
 
@@ -1160,7 +1160,7 @@ user_menu_cmd (const WEdit * edit_widget, const char *menu_file, int selected_en
     easy_patterns = old_patterns;
     MC_PTR_FREE (menu);
     g_free (entries);
-    g_free (data);
+    g_free (umdata);
     return res;
 }
 

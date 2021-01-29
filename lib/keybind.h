@@ -114,6 +114,7 @@ enum
     CK_DeleteToWordBegin,
     CK_DeleteToWordEnd,
     CK_ShowNumbers,
+    CK_ClipHistory,
     CK_Store,
     CK_Cut,
     CK_Paste,

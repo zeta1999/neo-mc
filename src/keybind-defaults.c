@@ -428,6 +428,7 @@ static const global_keymap_ini_t default_editor_keymap[] = {
     {"BottomOnScreen", "ctrl-pgdn"},
     {"ScrollUp", "ctrl-up"},
     {"ScrollDown", "ctrl-down"},
+    {"ClipHistory", "alt-shift-c"},
     {"Store", "ctrl-insert"},
     {"Paste", "shift-insert"},
     {"Cut", "shift-delete"},

@@ -255,6 +255,7 @@ Mark = t; shift-t
 MarkAndDown = insert
 
 [editor]
+ClipHistory = alt-shift-c
 Store = alt-w
 Paste = ctrl-y
 Cut = ctrl-w

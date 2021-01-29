@@ -116,7 +116,7 @@ update_editor_keymaps (global_keymap_t * keymap)
 void
 slang_api__cure_cursor_move (int offset)
 {
-    edit_cursor_move (get_cure (), offset);
+    edit_cursor_move (get_cure (), offset, NO_VALUE_MSG_PARAM, NULL);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -206,7 +206,7 @@ slang_api__cure_get_left_whole_word (int skip_space)
 int
 slang_api__cure_delete (void)
 {
-    return edit_delete (get_cure (), 0);
+    return edit_delete (get_cure (), 0, NO_VALUE_MSG_PARAM, NULL);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -219,7 +219,7 @@ slang_api__cure_delete (void)
 int
 slang_api__cure_backspace (void)
 {
-    return edit_backspace (get_cure (), 0);
+    return edit_backspace (get_cure (), 0, NO_VALUE_MSG_PARAM, NULL);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -231,7 +231,7 @@ slang_api__cure_backspace (void)
 void
 slang_api__cure_insert_ahead (int c)
 {
-    edit_insert_ahead (get_cure (), c);
+    edit_insert_ahead (get_cure (), c, NO_VALUE_MSG_PARAM, NULL);
 }
 
 /* --------------------------------------------------------------------------------------------- */

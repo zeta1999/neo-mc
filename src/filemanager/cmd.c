@@ -1287,7 +1287,7 @@ help_cmd (void)
 void
 user_file_menu_cmd (void)
 {
-    (void) user_menu_cmd (NULL, NULL, -1);
+    (void) user_menu_cmd (NULL, NULL, -1, NO_VALUE_MSG_PARAM, NULL);
 }
 
 /* --------------------------------------------------------------------------------------------- */
