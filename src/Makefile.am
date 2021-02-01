@@ -27,6 +27,7 @@ AM_CPPFLAGS += -DSAVERDIR=\""$(pkglibexecdir)"\"
 endif
 
 AM_CPPFLAGS += -I$(top_srcdir) $(GLIB_CFLAGS)
+AM_CPPFLAGS += -DENABLE_SLFUTURE_CONST
 
 localedir = $(datadir)/locale
 pkglibexecdir = $(libexecdir)/@PACKAGE@

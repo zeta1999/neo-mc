@@ -1,15 +1,21 @@
 #ifndef MC__SLANG_API_FUNCTIONS_H
 #define MC__SLANG_API_FUNCTIONS_H
 
+#include "lib/global.h"
+
 /*** typedefs(not structures) and defined constants **********************************************/
 
 /*** enums ***************************************************************************************/
 
 /*** structures declarations (and typedefs of structures)*****************************************/
 
+
 /*** global variables defined in .c file *********************************************************/
 
 /*** declarations of public functions ************************************************************/
+
+/* Control functions */
+int slang_api__action(void *ARRAY_2_VOIDP, char *action_name, long action_code, Multi_Type_Action_Data *data);
 
 /* Movement functions */
 void slang_api__cure_cursor_move (int offset);

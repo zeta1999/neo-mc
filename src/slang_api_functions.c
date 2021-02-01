@@ -56,6 +56,23 @@
 /*** file scope functions ************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 
+/* Gets the main dialog object. */
+static WDialog *
+get_curdial (void)
+{
+    GList *dialog = top_dlg;
+
+    /* Search first fullscreen dialog */
+    for (; dialog != NULL; dialog = g_list_next (dialog))
+        if ((WIDGET (dialog->data)->pos_flags & WPOS_FULLSCREEN) != 0)
+            break;
+
+    /* Can be NULL */
+    return dialog ? DIALOG(dialog->data) : NULL;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
 /* Gets  current editor object. */
 static WEdit *
 get_cure (void)
@@ -110,13 +127,66 @@ update_editor_keymaps (global_keymap_t * keymap)
 /* --------------------------------------------------------------------------------------------- */
 
 /*
+ * S-LANG FUNCTION: action(name_or_id)
+ * RETURN VALUE: true if the action has been recognized and handled
+ *
+ * Executes given action ↔ a CK_ enum command (or a dynamically added, e.g.: via script
+ * or via a keymap file). It can be given in two ways: either as its name (via string –
+ * action_name argument) or as its CK_ enum integer code (action_code arg).
+ *
+ * So this SLang function utilizes an #argmap (slirprc) to be able to obtain and handle
+ * a single argument of TWO TYPES » string and integer – which are automatically passed
+ * to the second and third argument of this C implementation function.
+ */
+int
+slang_api__action(void *ARRAY_2_VOIDP, char *action_name, long action_code, Multi_Type_Action_Data *data)
+{
+    WDialog *h;
+    cb_ret_t ret;
+    int parm;
+    //DataStruct data = {0};
+
+    (void) ARRAY_2_VOIDP; /* Unused (already read by glue code / argmap) */
+
+    h = get_curdial();
+    if (!h)
+        /* Couldn't execute the action » no main dialog widget found. */
+        return MSG_NOT_HANDLED;
+
+    /* Action given by a string name? */
+    if (action_name != NULL) {
+        long resolved;
+        resolved = keybind_lookup_action(action_name);
+        if (resolved == CK_IgnoreKey)
+            return MSG_NOT_HANDLED;
+        action_code = resolved;
+    }
+
+     parm = (int)action_code & ~0xffff;
+
+    /*
+     * Invoke the topmost message interpreting function, then WEdit's sub-callback
+     */
+    ret = edit_dialog_callback(WIDGET(h), NULL, MSG_ACTION, action_code, data);
+    if (ret == MSG_NOT_HANDLED)
+    {
+        GList *cur = GROUP(h)->current;
+        WEdit *e = (WEdit *) cur != NULL ? cur->data : NULL;
+        if (!e)
+            return MSG_NOT_HANDLED;
+        ret = edit_execute_key_command(e, action_code, -1, parm, data);
+    }
+    return ret;
+}
+
+/*
  * S-LANG FUNCTION: _cure_cursor_move(offset)
  */
 
 void
 slang_api__cure_cursor_move (int offset)
 {
-    edit_cursor_move (get_cure (), offset, NO_VALUE_MSG_PARAM, NULL);
+    edit_cursor_move (get_cure (), offset, NO_VALUE_PARM, NULL);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -206,7 +276,7 @@ slang_api__cure_get_left_whole_word (int skip_space)
 int
 slang_api__cure_delete (void)
 {
-    return edit_delete (get_cure (), 0, NO_VALUE_MSG_PARAM, NULL);
+    return edit_delete (get_cure (), 0, NO_VALUE_PARM, NULL);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -219,7 +289,7 @@ slang_api__cure_delete (void)
 int
 slang_api__cure_backspace (void)
 {
-    return edit_backspace (get_cure (), 0, NO_VALUE_MSG_PARAM, NULL);
+    return edit_backspace (get_cure (), 0, NO_VALUE_PARM, NULL);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -231,7 +301,7 @@ slang_api__cure_backspace (void)
 void
 slang_api__cure_insert_ahead (int c)
 {
-    edit_insert_ahead (get_cure (), c, NO_VALUE_MSG_PARAM, NULL);
+    edit_insert_ahead (get_cure (), c, NO_VALUE_PARM, NULL);
 }
 
 /* --------------------------------------------------------------------------------------------- */

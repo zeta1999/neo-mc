@@ -16,7 +16,7 @@ extern GHashTable *action_hook_functions;
 
 int slang_init_engine (void);
 int slang_plugins_init (void);
-GSList *get_command_callback (int ck_id);
+GSList *get_action_hook (int ck_id);
 
 /*** inline functions ****************************************************************************/
 

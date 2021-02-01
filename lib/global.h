@@ -148,41 +148,29 @@
 
 #define DEFAULT_CHARSET "ASCII"
 
-#define has_flag(x,y) (((x) & P_MSG_PRIME_FLAGS_APPLIED) == 0 && ((x) & (y)) != 0)
-#define has_pflag(x,y) (((x) & P_MSG_PRIME_FLAGS_APPLIED) != 0 && ((x) % (y)) == 0)         /* Modulo/y is 0 if y is a factor of the number */
-#define has_flag_check_both(x,y) (has_flag(x,y) || has_pflag(x,P_##y))
-/* The EM_… prefix stands for "embedded" – a second parm argument embedded in upper 16
- * bits of the original parm. It can be either a 14 bit integer, or 5 flags, or the
- * continulation of the base `parm` – a 30 bit integer, when 31 and 32 bits are set */
-#define GET_EM_PARM(x) ((has_flag(x,P_MSG_PRIME_FLAGS_APPLIED) && \
-                        has_flag(x,PARAM_ON_UPPER_14_BITS)) ? ((x) & ~(PARAM_ON_UPPER_14_BITS | \
-                            P_MSG_PRIME_FLAGS_APPLIED)) : \
-                ((!has_flag(x,P_MSG_PRIME_FLAGS_APPLIED) && \
-                        has_flag(x,PARAM_ON_UPPER_14_BITS)) ? \
-                                (((x)&~PARAM_ON_UPPER_14_BITS) >> 16) : ((x) & 0xffff0000)))
-/* Gets either 30 bits or 16 bits from input `parm` depending on the two top bits in it */
-#define GET_BASE_PARAM(x) ((has_flag(x,P_MSG_PRIME_FLAGS_APPLIED) && \
-                        has_flag(x,PARAM_ON_UPPER_14_BITS)) ? ((x) & ~(PARAM_ON_UPPER_14_BITS | \
-                            P_MSG_PRIME_FLAGS_APPLIED)) : ((x) & 0xffff))
-/*
- * A check if parm holds only a single value that uses 30, not 16 bits. It still has to be
- * unpacked ↔ cleared from the meta-data flags by GET_BASE_PARAM macro.
- */
-#define PARAM_IS_WHOLE(x) (has_flag(x,P_MSG_PRIME_FLAGS_APPLIED) && \
-                        has_flag(x,PARAM_ON_UPPER_14_BITS))
-#define EM_PARM_IS_FLAGS(x) (((x) & 0xffff0000) != 0)
-#define EM_PARM_IS_INTEGER(x) (((x) & 0xffff) != 0)
-/* A de-facto, empiric check if the number is above 16 bits */
-#define EM_PARM_IS_WHOLE(x) ((((x) & 0xffff) != 0) && (((x) & 0xffff0000) != 0))
-#define PARM_DATA int parm, void *data
+typedef enum {
+    Multi_Type_None         = 0,
+    Multi_Type_Int          = 1,
+    Multi_Type_Long         = 1<<1,
+    Multi_Type_String       = 1<<3,
+
+    Multi_Kind_Null         = 1<<7,
+    Multi_Kind_Number       = 1<<8,
+    Multi_Kind_Pointer      = 1<<9
+} Multi_Types_Kinds_t;
+
+#define has_flag(x,y) (((x) & (y)) != 0)
+#define set_flag(x,y) ((x) | (y))
+
+/* The user data parameters' definition */
+#define PARM_DATA int parm, Multi_Type_Action_Data *data
+#define DATA_NULL -1, NULL
+
 /* Compose the packed `parm` again to pass it to functions in single argument 0 */
-#define PASS_DATA1 (EM_PARM_IS_WHOLE(parm_embedded) ? (parm | P_MSG_PRIME_FLAGS_APPLIED | \
-            PARAM_ON_UPPER_14_BITS) : (parm | ((EM_PARM_IS_INTEGER(parm_embedded) ? \
-                ((parm_embedded << 16) | PARAM_ON_UPPER_14_BITS) : parm_embedded)))), data
+#define PASS_DATA1 parm_flags | command, data
 #define PASS_DATA parm, data
 #define PASS_DATAPTR parm, dataptr
-#define PASS_DATAPTR1 (parm | (EM_PARM_IS_INTEGER(parm_embedded) ? ((parm_embedded << 16) | \
-                     PARAM_ON_UPPER_14_BITS) : parm_embedded)), dataptr
+#define PASS_DATAPTR1 parm_flags, dataptr
 
 /*** enums ***************************************************************************************/
 
@@ -198,35 +186,38 @@ typedef enum
 /* special values for `parm` argument in callback functions */
 typedef enum
 {
-    /* The sign of the flags, required for them to be recognized */
-    PARM_FLAG_SGN = -1,
-
-    /* PRIME NUMBERS METHOD */
-    P_NO_VALUE_MSG_PARAM      =  3 << 16,         /* prime numbers */
-    P_MSG_DATA_PTR_GIVEN      =  5 << 16,
-    P_MSG_DATA_LONG_GIVEN     =  7 << 16,
-    P_MSG_FORCE_HANDLED       =  11 << 16,
-    P_MSG_FORCE_NOT_HANDLED   =  13 << 16,
-    P_PARAM_HAS_CUSTOM_FLAGS  =  17 << 16,
-    P_MSG_PRIME_FLAGS_APPLIED =  1 << 31,
-
-    /* POWER OF 2 FLAGS METHOD */
-    NO_VALUE_MSG_PARAM       =  -(1 << 0),    /* This enum means that there is no other information */
+    /* POWER OF 2 FLAGS */
+    NO_VALUE_PARM              =  1 << 23,      /* Such value means that there is no other information */
 
     /* THE PROPER FLAGS (used when `parm` used to change behavior of callbacks, not pass a value) */
-    MSG_DATA_PTR_GIVEN       =  1 << 25,
-    MSG_DATA_LONG_GIVEN      =  1 << 26,
-    MSG_FORCE_HANDLED        =  1 << 27,
-    MSG_FORCE_NOT_HANDLED    =  1 << 28,
-    PARAM_HAS_CUSTOM_FLAGS   =  1 << 29,
+    PARMF_DONT_RUN_HOOK        =  1 << 24,      /* Only original action will be run, not S-Lang */
+    PARMF_RUN_HOOK_ONLY        =  1 << 25,      /* Only S-Lang hook will be run, if any */
+    PARMF_FORCE_HANDLED        =  1 << 26,      /* Return MSG_HANDLED from the callback function */
+    PARMF_FORCE_NOT_HANDLED    =  1 << 27,      /* Return MSG_NOT_HANDLED from callback function */
 
-    /* SPECIAL FLAG (used to indicate an integer ·data· packed in `parm`) */
-    PARAM_ON_UPPER_14_BITS   =  1 << 30       /* Max 14 bit integer can be packed in `parm` –
-                                               * it's 16 minus 1 for P_MSG_PRIME_FLAGS_APPLIED
-                                               * and also for this flag itself. */
+    PARMF_DATA_IS_STRING       =  1 << 28,
+    PARMF_DATA_IS_LONG         =  1 << 29,
+    PARMF_DATA_IS_MULTI_TYPE   =  1 << 30
+
 } meta_data_param_flags_t;
 
+typedef enum {
+    INT_DATA,
+    LONG_DATA,
+    STR_DATA,
+    OPAQ_DATA
+} DataStructType;
+
 /*** structures declarations (and typedefs of structures)*****************************************/
+
+typedef struct {
+    int type;
+    union {
+        int param;
+        long lparam;
+        char *string;
+    };
+} Multi_Type_Action_Data;
 
 typedef struct
 {

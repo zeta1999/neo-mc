@@ -66,7 +66,7 @@ static char *last_fname = NULL;
 /* --------------------------------------------------------------------------------------------- */
 
 static void
-slang_error_handler (char *error_msg)
+slang_error_handler (SLFUTURE_CONST char *error_msg)
 {
     if (!last_error)
         last_error = g_string_sized_new (255);
@@ -93,7 +93,7 @@ slang_error_handler (char *error_msg)
 /* --------------------------------------------------------------------------------------------- */
 
 static void
-slang_dump_handler (char *traceback)
+slang_dump_handler (SLFUTURE_CONST char *traceback)
 {
     char *last_fragment_search_str, **tb_bits;
 
@@ -124,7 +124,7 @@ slang_dump_handler (char *traceback)
 /* --------------------------------------------------------------------------------------------- */
 
 static void
-slang_exit_hook_handler (char *fname)
+slang_exit_hook_handler (SLFUTURE_CONST char *fname)
 {
     /* g_free is NULL safe, no need to check. */
     g_free (last_fname);
@@ -289,7 +289,7 @@ slang_plugins_init (void)
 
 /* A function that looks up the command associated S-Lang code callback. */
 GSList *
-get_command_callback (int ck_id)
+get_action_hook (int ck_id)
 {
     GSList *value = g_hash_table_lookup (action_hook_functions, GINT_TO_POINTER (ck_id));
     return value;

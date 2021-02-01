@@ -67,7 +67,7 @@ static const mode_t clip_open_mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
 /* --------------------------------------------------------------------------------------------- */
 
 char *
-clipboard_get_indexed_clip_path(unsigned char clip_id)
+clipboard_get_indexed_clip_path(long clip_id)
 {
     char *template, *filled;
     template = mc_config_get_full_path (EDIT_HOME_INDEXED_CLIP_FILE);
@@ -78,24 +78,29 @@ clipboard_get_indexed_clip_path(unsigned char clip_id)
 
 /* --------------------------------------------------------------------------------------------- */
 char *
-helper_peek_first_byte_and_select(unsigned char *data_first_byte, unsigned char global_clip_id)
+helper_select_clip_file_path(Multi_Type_Action_Data *data, long global_clip_id)
 {
     char *clip_path;
-    unsigned char clip_id = global_clip_id;
+    long clip_id = global_clip_id;
+
+    long value;
+    int kind;
+    value = helper_get_multi_type_value(data, &kind);
 
     /* The data is empty or it isn't a path? */
-    if (data_first_byte == NULL || data_first_byte[0] != '/') {
+    if (kind == Multi_Kind_Null || kind == Multi_Kind_Number) {
         /*
          * Is it a valid clip index? If yes, then override the mc_global value and use this
-         * index coming from MSG_ACTION's data
+         * index, coming from MSG_ACTION's data
          */
-        if (data_first_byte != NULL && data_first_byte[0] < 47 && data_first_byte[0] != '\0')
-            clip_id = data_first_byte[0];
+
+        if (value >= 1 && value <= 50)
+            clip_id = value;
 
         clip_path = clipboard_get_indexed_clip_path(clip_id);
     } else
         /* Note: it's MSG_ACTION that obtained an alternate path, to a clip file */
-        clip_path = g_strdup((char*) data_first_byte); 
+        clip_path = g_strdup((char *) value); 
 
     return clip_path;
 }
@@ -103,7 +108,7 @@ helper_peek_first_byte_and_select(unsigned char *data_first_byte, unsigned char 
 /* --------------------------------------------------------------------------------------------- */
 
 gboolean
-clipboard_save_cur_clip_id(unsigned char clip_id)
+clipboard_save_cur_clip_id(long clip_id)
 {
     char *txt_id;
     size_t str_len;
@@ -148,7 +153,7 @@ clipboard_file_to_ext_clip (const gchar * event_group_name, const gchar * event_
 
     if (clipboard_store_path == NULL || clipboard_store_path[0] == '\0')
         return TRUE;
-    tmp = helper_peek_first_byte_and_select(data, mc_global.cur_clip_id);
+    tmp = helper_select_clip_file_path(data, mc_global.cur_clip_id);
     cmd = g_strconcat (clipboard_store_path, " ", tmp, " 2>/dev/null", (char *) NULL);
 
     if (cmd != NULL)
@@ -173,6 +178,7 @@ clipboard_file_from_ext_clip (const gchar * event_group_name, const gchar * even
     (void) event_name;
     (void) init_data;
 
+    mc_always_log("clipboard_paste_path: %s", clipboard_paste_path);
     if (clipboard_paste_path == NULL || clipboard_paste_path[0] == '\0')
         return TRUE;
 
@@ -212,7 +218,7 @@ clipboard_file_from_ext_clip (const gchar * event_group_name, const gchar * even
                 char *fname;
                 vfs_path_t *fname_vpath;
 
-                fname = helper_peek_first_byte_and_select(data, mc_global.cur_clip_id);
+                fname = helper_select_clip_file_path(data, mc_global.cur_clip_id);
                 fname_vpath = vfs_path_from_str(fname);
                 g_free(fname);
 
@@ -257,7 +263,7 @@ clipboard_text_to_file (const gchar * event_group_name, const gchar * event_name
     if (text == NULL)
         return FALSE;
 
-    fname = helper_peek_first_byte_and_select(data, mc_global.cur_clip_id);
+    fname = helper_select_clip_file_path(data, mc_global.cur_clip_id);
     fname_vpath = vfs_path_from_str(fname);
     g_free(fname);
 

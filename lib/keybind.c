@@ -38,7 +38,7 @@
 
 /*** global variables ****************************************************************************/
 
-int new_dynamic_command_id = 100000;
+int new_dynamic_command_id = 20000;
 
 /*** file scope macro definitions ****************************************************************/
 

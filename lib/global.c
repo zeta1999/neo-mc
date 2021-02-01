@@ -130,3 +130,37 @@ mc_global_t mc_global = {
 
 /*** public functions ****************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
+
+long
+helper_get_multi_type_value(Multi_Type_Action_Data *data, int *kind)
+{
+    /* No data? */
+    if (kind && !data)
+    {
+        *kind = Multi_Kind_Null;
+        return -1;
+    } else if (!data)
+        return -1;
+
+    /* Prefill the kind information */
+    if (kind)
+    {
+        if (data->type == Multi_Type_String)
+            *kind = Multi_Kind_Pointer;
+        else
+            *kind = Multi_Kind_Number;
+    }
+
+    /* Read value according to its type */
+    switch (data->type)
+    {
+        case Multi_Type_String:
+            return (long)data->string;
+        case Multi_Type_Long:
+            return (long)data->lparam;
+        case Multi_Type_Int:
+            return (int)data->param;
+        default:
+            return -1;
+    }
+}

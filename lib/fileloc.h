@@ -73,7 +73,7 @@
 #define EDIT_HOME_MACRO_FILE            EDIT_HOME_DIR PATH_SEP_STR "macros.d" PATH_SEP_STR "macro"
 #define EDIT_HOME_SYNTAX_FILE           EDIT_HOME_DIR PATH_SEP_STR "Syntax"
 #define EDIT_HOME_MAIN_CLIP_FILE        EDIT_HOME_DIR PATH_SEP_STR "mcedit.clip"
-#define EDIT_HOME_INDEXED_CLIP_FILE     EDIT_HOME_DIR PATH_SEP_STR "mcedit-%d.clip"
+#define EDIT_HOME_INDEXED_CLIP_FILE     EDIT_HOME_DIR PATH_SEP_STR "mcedit-%ld.clip"
 #define EDIT_HOME_CUR_CLIP_ID_FILE      EDIT_HOME_DIR PATH_SEP_STR "mcedit.clip_id"
 #define EDIT_HOME_BLOCK_FILE            EDIT_HOME_DIR PATH_SEP_STR "mcedit.block"
 #define EDIT_HOME_TEMP_FILE             EDIT_HOME_DIR PATH_SEP_STR "mcedit.temp"

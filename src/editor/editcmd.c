@@ -485,19 +485,15 @@ edit_save_cmd (WEdit * edit, PARM_DATA)
 {
     int res, save_lock = 0;
     vfs_path_t *fpath;
-    gboolean created_vfs_path;   /* Flag that `fpath` needs freeing */
 
     /* Is file path sent with MSG_ACTION? */
-    if (has_pflag(parm, P_MSG_DATA_PTR_GIVEN) || has_flag(parm, MSG_DATA_PTR_GIVEN))
+    if (data != NULL && data->type == Multi_Type_String)
     {
         /* Yes – create vfs object from it */
-        fpath = vfs_path_from_str((char*)data);
-        created_vfs_path = TRUE;
-    } else {
+        fpath = vfs_path_from_str(data->string);
+    } else
         /* No – use existing vfs object, from WEdit */
-        fpath = edit->filename_vpath;
-        created_vfs_path = FALSE;
-    }
+        fpath = vfs_path_clone(edit->filename_vpath);
 
     if (!edit->locked && !edit->delete_file)
         save_lock = lock_file (fpath);
@@ -508,7 +504,7 @@ edit_save_cmd (WEdit * edit, PARM_DATA)
         edit->locked = unlock_file (fpath);
 
     /* Release unneded vfs object */
-    if (created_vfs_path)
+    if (fpath != NULL)
         vfs_path_free(fpath);
 
     /* On failure try 'save as', it does locking on its own */
@@ -1105,7 +1101,9 @@ edit_save_block_to_clip_file (WEdit * edit, off_t start, off_t finish, PARM_DATA
     gboolean ret;
     gchar *tmp;
 
-    tmp = helper_peek_first_byte_and_select(data, mc_global.cur_clip_id);
+    tmp = helper_select_clip_file_path(data, mc_global.cur_clip_id);
+
+    mc_always_log("tmp: %s", tmp);
     ret = edit_save_block (edit, tmp, start, finish, PASS_DATA);
     g_free (tmp);
 
@@ -1444,15 +1442,15 @@ edit_delete_macro (WEdit * edit, int hotkey, PARM_DATA)
      * Has been the key string sent with the message? If so, use it, it's an argument to
      * this CK action.
      */
-    if (has_flag_check_both(parm, MSG_DATA_PTR_GIVEN))
-        skeyname = (char *) data;
+    if (data && data->type == Multi_Type_String)
+        skeyname = data->string;
     else
         skeyname = lookup_key_by_code (hotkey);
     while (mc_config_del_key (macros_config, section_name, skeyname))
         ;
 
     /* Release if it's not an external pointer */
-    if (!has_flag(parm, MSG_DATA_PTR_GIVEN))
+    if (data != skeyname)
         g_free (skeyname);
 
     mc_config_save_file (macros_config, NULL);
@@ -1758,8 +1756,12 @@ void
 edit_delete_macro_cmd (WEdit * edit, PARM_DATA)
 {
     int hotkey;
-    if (has_flag_check_both(parm, MSG_DATA_LONG_GIVEN))
-        hotkey = (int)(intptr_t) data;
+    int kind;
+    long value;
+    
+    value = helper_get_multi_type_value(data, &kind);
+    if (kind == Multi_Kind_Number)
+        hotkey = (int)value;
     else
         hotkey = editcmd_dialog_raw_key_query (_("Delete macro"), _("Press macro hotkey:"), TRUE);
 
@@ -2951,26 +2953,11 @@ edit_save_block (WEdit * edit, const char *filename, off_t start, off_t finish, 
 
 /* --------------------------------------------------------------------------------------------- */
 
-unsigned char *
-helper_use_metadata_to_read_userdata(unsigned char *dataptr, PARM_DATA)
-{
-    /* A file path given? */
-    if (has_flag_check_both (parm, MSG_DATA_PTR_GIVEN) && data != NULL)
-        dataptr = (unsigned char *) data;
-    /* A clip ID given? */
-    else if (has_flag_check_both (parm, MSG_DATA_LONG_GIVEN) && data != NULL)
-    {
-        unsigned char new_id = (unsigned char)((intptr_t)data);
-        /* Char 47 is a '/', so this is the limit for clip_id value */
-        *dataptr = (new_id < 47 && new_id > 0) ? new_id : *dataptr;
-    }
-    return dataptr;
-}
 
 /* --------------------------------------------------------------------------------------------- */
 
 void
-edit_paste_from_clip_history (WEdit * edit, unsigned char clip_id, PARM_DATA)
+edit_paste_from_clip_history (WEdit * edit, long clip_id, PARM_DATA)
 {
     (void) edit;
     edit_error_dialog (_("Error"), _("This function is not implemented"));
@@ -2979,24 +2966,20 @@ edit_paste_from_clip_history (WEdit * edit, unsigned char clip_id, PARM_DATA)
 /* --------------------------------------------------------------------------------------------- */
 
 gboolean
-edit_copy_to_X_buf_cmd (WEdit * edit, unsigned char clip_id, PARM_DATA)
+edit_copy_to_X_buf_cmd (WEdit * edit, long clip_id, PARM_DATA)
 {
     off_t start_mark, end_mark;
-    unsigned char *dataptr = &clip_id;
 
     if (!eval_marks (edit, &start_mark, &end_mark))
         return TRUE;
 
-    /* Peek at first byte of data (clip_id) or use the pointer as a custom clip file path */
-    dataptr = helper_use_metadata_to_read_userdata(dataptr, PASS_DATA);
-
-    if (!edit_save_block_to_clip_file (edit, start_mark, end_mark, PASS_DATAPTR))
+    if (!edit_save_block_to_clip_file (edit, start_mark, end_mark, PASS_DATA))
     {
         edit_error_dialog (_("Copy to clipboard"), get_sys_error (_("Unable to save to file")));
         return FALSE;
     }
     /* try use external clipboard utility */
-    mc_event_raise (MCEVENT_GROUP_CORE, "clipboard_file_to_ext_clip", dataptr);
+    mc_event_raise (MCEVENT_GROUP_CORE, "clipboard_file_to_ext_clip", data);
 
     if (option_drop_selection_on_copy)
         edit_mark_cmd (edit, TRUE, PASS_DATA);
@@ -3007,22 +2990,19 @@ edit_copy_to_X_buf_cmd (WEdit * edit, unsigned char clip_id, PARM_DATA)
 /* --------------------------------------------------------------------------------------------- */
 
 gboolean
-edit_cut_to_X_buf_cmd (WEdit * edit, unsigned char clip_id, PARM_DATA)
+edit_cut_to_X_buf_cmd (WEdit * edit, long clip_id, PARM_DATA)
 {
     off_t start_mark, end_mark;
-    unsigned char *dataptr = &clip_id;
 
     if (!eval_marks (edit, &start_mark, &end_mark))
         return TRUE;
-    /* Peek at first byte of data (clip_id) or use the pointer as a custom clip file path */
-    dataptr = helper_use_metadata_to_read_userdata(dataptr, PASS_DATA);
-    if (!edit_save_block_to_clip_file (edit, start_mark, end_mark, PASS_DATAPTR))
+    if (!edit_save_block_to_clip_file (edit, start_mark, end_mark, PASS_DATA))
     {
         edit_error_dialog (_("Cut to clipboard"), _("Unable to save to file"));
         return FALSE;
     }
     /* try use external clipboard utility */
-    mc_event_raise (MCEVENT_GROUP_CORE, "clipboard_file_to_ext_clip", dataptr);
+    mc_event_raise (MCEVENT_GROUP_CORE, "clipboard_file_to_ext_clip", data);
 
     edit_block_delete_cmd (edit, PASS_DATA);
     edit_mark_cmd (edit, TRUE, PASS_DATA);
@@ -3033,17 +3013,15 @@ edit_cut_to_X_buf_cmd (WEdit * edit, unsigned char clip_id, PARM_DATA)
 /* --------------------------------------------------------------------------------------------- */
 
 gboolean
-edit_paste_from_X_buf_cmd (WEdit * edit, unsigned char clip_id, PARM_DATA)
+edit_paste_from_X_buf_cmd (WEdit * edit, long clip_id, PARM_DATA)
 {
     char *path;
     vfs_path_t *vpath;
     gboolean ret;
-    unsigned char *dataptr = &clip_id;
 
-    dataptr = helper_use_metadata_to_read_userdata(dataptr, PASS_DATA);
     /* try use external clipboard utility */
-    mc_event_raise (MCEVENT_GROUP_CORE, "clipboard_file_from_ext_clip", dataptr);
-    path = helper_peek_first_byte_and_select(dataptr, clip_id);
+    mc_event_raise (MCEVENT_GROUP_CORE, "clipboard_file_from_ext_clip", data);
+    path = helper_select_clip_file_path(data, clip_id);
     if (!path)
         return FALSE;
     vpath = vfs_path_from_str(path);
@@ -3465,15 +3443,20 @@ edit_select_codepage_cmd (WEdit * edit, PARM_DATA)
 /* --------------------------------------------------------------------------------------------- */
 
 void
-edit_insert_literal_cmd (WEdit * edit, int parm, void *data)
+edit_insert_literal_cmd (WEdit * edit, PARM_DATA)
 {
     int char_for_insertion;
-    if (parm < 0)
+    int kind;
+    long value;
+
+    value = helper_get_multi_type_value(data, &kind);
+    if (kind != Multi_Kind_Number) {
         char_for_insertion = editcmd_dialog_raw_key_query (_("Insert literal"),
-                                                       _("Press any key:"), FALSE);
-    else
-        char_for_insertion = (int) parm;
-    edit_execute_key_command (edit, -1, ascii_alpha_to_cntrl (char_for_insertion), parm, NULL);
+                                                _("Press any key:"), FALSE);
+    } else
+        char_for_insertion = (int)value;
+
+    edit_execute_key_command (edit, -1, ascii_alpha_to_cntrl (char_for_insertion), PASS_DATA);
 }
 
 /* --------------------------------------------------------------------------------------------- */

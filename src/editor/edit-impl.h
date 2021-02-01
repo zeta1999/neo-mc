@@ -228,7 +228,7 @@ void edit_date_cmd (WEdit * edit, PARM_DATA);
 void edit_goto_cmd (WEdit * edit, PARM_DATA);
 gboolean eval_marks (WEdit * edit, off_t * start_mark, off_t * end_mark);
 void edit_status (WEdit * edit, gboolean active);
-void edit_execute_key_command (WEdit * edit, long command, int char_for_insertion, PARM_DATA);
+cb_ret_t edit_execute_key_command (WEdit * edit, long command, int char_for_insertion, PARM_DATA);
 void edit_update_screen (WEdit * edit);
 void edit_save_size (WEdit * edit);
 gboolean edit_handle_move_resize (WEdit * edit, long command);
@@ -246,9 +246,9 @@ void edit_delete_macro_cmd (WEdit * edit, PARM_DATA);
 gboolean edit_repeat_macro_cmd (WEdit * edit, PARM_DATA);
 
 unsigned char *helper_use_metadata_to_read_userdata(unsigned char *dataptr, PARM_DATA);
-gboolean edit_copy_to_X_buf_cmd (WEdit * edit, unsigned char clip_id, PARM_DATA);
-gboolean edit_cut_to_X_buf_cmd (WEdit * edit, unsigned char clip_id, PARM_DATA);
-gboolean edit_paste_from_X_buf_cmd (WEdit * edit, unsigned char clip_id, PARM_DATA);
+gboolean edit_copy_to_X_buf_cmd (WEdit * edit, long clip_id, PARM_DATA);
+gboolean edit_cut_to_X_buf_cmd (WEdit * edit, long clip_id, PARM_DATA);
+gboolean edit_paste_from_X_buf_cmd (WEdit * edit, long clip_id, PARM_DATA);
 
 void edit_select_codepage_cmd (WEdit * edit, PARM_DATA);
 void edit_insert_literal_cmd (WEdit * edit, PARM_DATA);
@@ -256,7 +256,7 @@ gboolean edit_execute_macro (WEdit * edit, int hotkey, PARM_DATA);
 void edit_begin_end_macro_cmd (WEdit * edit, PARM_DATA);
 void edit_begin_end_repeat_cmd (WEdit * edit, PARM_DATA);
 
-void edit_paste_from_clip_history (WEdit * edit, unsigned char clip_id, PARM_DATA);
+void edit_paste_from_clip_history (WEdit * edit, long clip_id, PARM_DATA);
 
 void edit_set_filename (WEdit * edit, const vfs_path_t * name_vpath);
 
@@ -282,7 +282,7 @@ void edit_mail_dialog (WEdit * edit, PARM_DATA);
 void format_paragraph (WEdit * edit, gboolean force, PARM_DATA);
 
 /* either command or char_for_insertion must be passed as -1 */
-void edit_execute_cmd (WEdit * edit, long command, int char_for_insertion, PARM_DATA);
+cb_ret_t edit_execute_cmd (WEdit * edit, long command, int char_for_insertion, PARM_DATA);
 
 /*** inline functions ****************************************************************************/
 

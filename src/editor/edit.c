@@ -108,6 +108,9 @@ edit_stack_type edit_history_moveto[MAX_HISTORY_MOVETO];
 const char VERTICAL_MAGIC[] = { '\1', '\1', '\1', '\1', '\n' };
 
 /*** file scope macro definitions ****************************************************************/
+#define REPEAT_1(...) __VA_ARGS__
+#define REPEAT_2(...) REPEAT_1(__VA_ARGS__), REPEAT_1(__VA_ARGS__)
+#define REPEAT_4(...) REPEAT_2(__VA_ARGS__), REPEAT_2(__VA_ARGS__)
 
 #define TEMP_BUF_LEN 1024
 
@@ -287,24 +290,22 @@ edit_insert_stream (WEdit * edit, FILE * f, PARM_DATA)
  * considered to be a file path and it is used before edit's open file.
  */
 static vfs_path_t *
-helper_resolv_file_path(const vfs_path_t *std_vpath, gboolean *alloc_vfs_return, PARM_DATA) {
-    gboolean created_vfs_path = FALSE;
-    const vfs_path_t *fpath = NULL;
+helper_resolv_file_path(vfs_path_t *std_vpath, PARM_DATA) {
+    vfs_path_t *fspath = NULL;
 
-    if (has_flag_check_both(parm,MSG_DATA_PTR_GIVEN) && data != NULL)
+    if (data != NULL && data->type == Multi_Type_String)
     {
         /* Use the input data to MSG_ACTION – it should be a string with a file path */
-        fpath = vfs_path_from_str((char *)data);
-        created_vfs_path = TRUE;
+        fspath = vfs_path_from_str((char *) data->string);
     } else
         /* Use the standard, provided file */
-        fpath = std_vpath;
+        fspath = vfs_path_clone (std_vpath);
 
-    if (alloc_vfs_return)
-        *alloc_vfs_return = created_vfs_path;
-
-    return fpath;
+    return fspath;
 }
+
+/* --------------------------------------------------------------------------------------------- */
+
 
 /* --------------------------------------------------------------------------------------------- */
 /**
@@ -421,30 +422,30 @@ check_file_access (WEdit * edit, const vfs_path_t * filename_vpath, struct stat 
 static gboolean
 edit_load_file (WEdit * edit, PARM_DATA)
 {
-    gboolean fast_load = TRUE, created_vfs_path;
-    vfs_path_t *fpath;
+    gboolean fast_load = TRUE;
+    vfs_path_t *fspath;
 
-    fpath = helper_resolv_file_path(edit->filename_vpath, &created_vfs_path, PASS_DATA);
+    fspath = helper_resolv_file_path(edit->filename_vpath, PASS_DATA);
 
     /* Cannot do fast load if a filter is used */
-    if (edit_find_filter (fpath) >= 0)
+    if (edit_find_filter (fspath) >= 0)
         fast_load = FALSE;
 
     /*
      * FIXME: line end translation should disable fast loading as well
      * Consider doing fseek() to the end and ftell() for the real size.
      */
-    if (fpath != NULL)
+    if (fspath != NULL)
     {
         /*
          * VFS may report file size incorrectly, and slow load is not a big
          * deal considering overhead in VFS.
          */
-        if (!vfs_file_is_local (fpath))
+        if (!vfs_file_is_local (fspath))
             fast_load = FALSE;
 
         /* If we are dealing with a real file, check that it exists */
-        if (!check_file_access (edit, fpath, &edit->stat1))
+        if (!check_file_access (edit, fspath, &edit->stat1))
         {
             edit_clean (edit, PASS_DATA);
             return FALSE;
@@ -460,7 +461,7 @@ edit_load_file (WEdit * edit, PARM_DATA)
     {
         edit_buffer_init (&edit->buffer, edit->stat1.st_size);
 
-        if (!edit_load_file_fast (&edit->buffer, fpath))
+        if (!edit_load_file_fast (&edit->buffer, fspath))
         {
             edit_clean (edit, PASS_DATA);
             return FALSE;
@@ -470,11 +471,11 @@ edit_load_file (WEdit * edit, PARM_DATA)
     {
         edit_buffer_init (&edit->buffer, 0);
 
-        if (fpath != NULL
-            && *(vfs_path_get_by_index (fpath, 0)->path) != '\0')
+        if (fspath != NULL
+            && *(vfs_path_get_by_index (fspath, 0)->path) != '\0')
         {
             edit->undo_stack_disable = 1;
-            if (edit_insert_file (edit, fpath, PASS_DATA) < 0)
+            if (edit_insert_file (edit, fspath, PASS_DATA) < 0)
             {
                 edit_clean (edit, PASS_DATA);
                 return FALSE;
@@ -500,19 +501,19 @@ edit_load_position (WEdit * edit, gboolean load_position, PARM_DATA)
 {
     long line, column;
     off_t offset;
-    gboolean created_vfs_path, ret = TRUE;
-    vfs_path_t *fpath;
+    gboolean ret = TRUE;
+    vfs_path_t *fspath;
 
-    fpath = helper_resolv_file_path(edit->filename_vpath, &created_vfs_path, PASS_DATA);
+    fspath = helper_resolv_file_path(edit->filename_vpath, PASS_DATA);
 
-    if (fpath == NULL
-        || *(vfs_path_get_by_index (fpath, 0)->path) == '\0')
+    if (fspath == NULL
+        || *(vfs_path_get_by_index (fspath, 0)->path) == '\0')
     {
         ret = FALSE;
         goto l_pos_return;
     }
 
-    load_file_position (fpath, &line, &column, &offset, &edit->serialized_bookmarks);
+    load_file_position (fspath, &line, &column, &offset, &edit->serialized_bookmarks);
     /* apply bookmarks in any case */
     book_mark_restore (edit, BOOK_MARK_COLOR);
 
@@ -535,8 +536,8 @@ edit_load_position (WEdit * edit, gboolean load_position, PARM_DATA)
     edit_move_display (edit, line - (WIDGET (edit)->lines / 2), PASS_DATA);
 
 l_pos_return:
-    if (created_vfs_path && fpath != NULL)
-        vfs_path_free (fpath);
+    if (fspath != NULL)
+        vfs_path_free (fspath);
     return ret;
 }
 
@@ -546,26 +547,26 @@ l_pos_return:
 static gboolean
 edit_save_position (WEdit * edit, PARM_DATA)
 {
-    gboolean created_vfs_path, ret = TRUE;
-    vfs_path_t *fpath;
+    gboolean ret = TRUE;
+    vfs_path_t *fspath;
 
-    fpath = helper_resolv_file_path(edit->filename_vpath, &created_vfs_path, PASS_DATA);
+    fspath = helper_resolv_file_path(edit->filename_vpath, PASS_DATA);
 
-    if (fpath == NULL
-        || *(vfs_path_get_by_index (fpath, 0)->path) == '\0')
+    if (fspath == NULL
+        || *(vfs_path_get_by_index (fspath, 0)->path) == '\0')
     {
         ret = FALSE;
         goto s_pos_return;
     }
 
     book_mark_serialize (edit, BOOK_MARK_COLOR);
-    save_file_position (fpath, edit->buffer.curs_line + 1, edit->curs_col,
+    save_file_position (fspath, edit->buffer.curs_line + 1, edit->curs_col,
                         edit->buffer.curs1, edit->serialized_bookmarks);
     edit->serialized_bookmarks = NULL;
 
 s_pos_return:
-    if (created_vfs_path && fpath != NULL)
-        vfs_path_free (fpath);
+    if (fspath != NULL)
+        vfs_path_free (fspath);
     return ret;
 }
 
@@ -676,20 +677,19 @@ get_prev_undo_action (WEdit * edit, PARM_DATA)
 static void
 edit_modification (WEdit * edit, PARM_DATA)
 {
-    gboolean created_vfs_path;
-    vfs_path_t *fpath;
+    vfs_path_t *fspath;
 
-    fpath = helper_resolv_file_path(edit->filename_vpath, &created_vfs_path, PASS_DATA);
+    fspath = helper_resolv_file_path(edit->filename_vpath, PASS_DATA);
 
     edit->caches_valid = FALSE;
 
     /* raise lock when file modified */
     if (!edit->modified && !edit->delete_file)
-        edit->locked = lock_file (fpath);
+        edit->locked = lock_file (fspath);
     edit->modified = 1;
 
-    if (created_vfs_path && fpath != NULL)
-        vfs_path_free(fpath);
+    if (fspath != NULL)
+        vfs_path_free(fspath);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1531,14 +1531,16 @@ edit_tab_cmd (WEdit * edit, PARM_DATA)
 
 /* --------------------------------------------------------------------------------------------- */
 
-gboolean
+static gboolean
 check_and_wrap_line (WEdit * edit, PARM_DATA)
 {
     off_t curs;
 
-    if ((!has_flag_check_both(parm,MSG_FORCE_HANDLED) && !option_typewriter_wrap) ||
-        has_flag_check_both(parm, MSG_FORCE_NOT_HANDLED))
+    /* Force execution if requested or block if requested */
+    if ((!has_flag(parm,PARMF_FORCE_HANDLED) && !option_typewriter_wrap) ||
+            has_flag(parm, PARMF_FORCE_NOT_HANDLED))
         return FALSE;
+
     edit_update_curs_col (edit);
     if (edit->curs_col < option_word_wrap_line_length)
         return TRUE;
@@ -1745,7 +1747,7 @@ edit_print_string (WEdit * e, const char *s)
     size_t i = 0;
 
     while (s[i] != '\0')
-        edit_execute_cmd (e, CK_InsertChar, (unsigned char) s[i++], NO_VALUE_MSG_PARAM, NULL);
+        edit_execute_cmd (e, CK_InsertChar, (unsigned char) s[i++], DATA_NULL);
     e->force |= REDRAW_COMPLETELY;
     edit_update_screen (e);
     return i;
@@ -2245,17 +2247,16 @@ edit_init (WEdit * edit, int y, int x, int lines, int cols, const vfs_path_t * f
 gboolean
 edit_clean (WEdit * edit, PARM_DATA)
 {
-    gboolean created_vfs_path;
-    vfs_path_t *fpath;
+    vfs_path_t *fspath;
 
     if (edit == NULL)
         return FALSE;
 
-    fpath = helper_resolv_file_path(edit->filename_vpath, &created_vfs_path, PASS_DATA);
+    fspath = helper_resolv_file_path(edit->filename_vpath, PASS_DATA);
 
     /* a stale lock, remove it */
     if (edit->locked)
-        (void) unlock_file (fpath);
+        (void) unlock_file (fspath);
 
     /* save cursor position */
     if (option_save_position)
@@ -2264,8 +2265,8 @@ edit_clean (WEdit * edit, PARM_DATA)
         g_array_free (edit->serialized_bookmarks, TRUE);
 
     /* File specified on the mcedit command line and never saved */
-    if (edit->delete_file && fpath != NULL)
-        unlink (vfs_path_get_last_path_str (fpath));
+    if (edit->delete_file && fspath != NULL)
+        unlink (vfs_path_get_last_path_str (fspath));
 
     edit_free_syntax_rules (edit);
     book_mark_flush (edit, -1);
@@ -2304,11 +2305,11 @@ edit_reload_line (WEdit * edit, const vfs_path_t * filename_vpath, long line, PA
     Widget *w = WIDGET (edit);
     WEdit *e;
 
-    gboolean created_vfs_path, ret = TRUE;
-    vfs_path_t *fpath;
+    gboolean ret = TRUE;
+    vfs_path_t *fspath;
 
-    fpath = helper_resolv_file_path(filename_vpath, &created_vfs_path, PASS_DATA);
-    if (!fpath)
+    fspath = helper_resolv_file_path((vfs_path_t *)filename_vpath, PASS_DATA);
+    if (!fspath)
         return FALSE;
 
     e = g_malloc0 (sizeof (WEdit));
@@ -2317,7 +2318,7 @@ edit_reload_line (WEdit * edit, const vfs_path_t * filename_vpath, long line, PA
     e->fullscreen = edit->fullscreen;
     e->loc_prev = edit->loc_prev;
 
-    if (edit_init (e, w->y, w->x, w->lines, w->cols, fpath, line, PASS_DATA) == NULL)
+    if (edit_init (e, w->y, w->x, w->lines, w->cols, fspath, line, PASS_DATA) == NULL)
     {
         ret = FALSE;
         goto relo_lin_ret;
@@ -2328,8 +2329,8 @@ edit_reload_line (WEdit * edit, const vfs_path_t * filename_vpath, long line, PA
 
 relo_lin_ret:
     g_free (e);
-    if (created_vfs_path && fpath != NULL)
-        vfs_path_free(fpath);
+    if (fspath != NULL)
+        vfs_path_free(fspath);
     return ret;
 }
 
@@ -3293,16 +3294,20 @@ edit_find_bracket (WEdit * edit, PARM_DATA)
  * inserted at the cursor.
  */
 
-void
-edit_execute_key_command (WEdit * edit, long command, int char_for_insertion, int parm, void *data)
+cb_ret_t
+edit_execute_key_command (WEdit * edit, long command, int char_for_insertion, PARM_DATA)
 {
+    cb_ret_t ret = MSG_HANDLED;
+    int parm_flags = (int) command & ~0xffff;
+    command = command & 0xffff;
+
     if (command == CK_MacroStartRecord || command == CK_RepeatStartRecord
         || (macro_index < 0
             && (command == CK_MacroStartStopRecord || command == CK_RepeatStartStopRecord)))
     {
         macro_index = 0;
         edit->force |= REDRAW_CHAR_ONLY | REDRAW_LINE;
-        return;
+        return ret;
     }
     if (macro_index != -1)
     {
@@ -3311,13 +3316,13 @@ edit_execute_key_command (WEdit * edit, long command, int char_for_insertion, in
         {
             edit_store_macro_cmd (edit, PASS_DATA);
             macro_index = -1;
-            return;
+            return ret;
         }
         if (command == CK_RepeatStopRecord || command == CK_RepeatStartStopRecord)
         {
             edit_repeat_macro_cmd (edit, PASS_DATA);
             macro_index = -1;
-            return;
+            return ret;
         }
     }
 
@@ -3330,9 +3335,12 @@ edit_execute_key_command (WEdit * edit, long command, int char_for_insertion, in
     if (command != CK_Undo && command != CK_ExtendedKeyMap)
         edit_push_key_press (edit, PASS_DATA);
 
-    edit_execute_cmd (edit, command, char_for_insertion, PASS_DATA);
+    mc_always_log("key: %d/%d, %s\n", command, -1, "-1");
+    ret = edit_execute_cmd (edit, command, char_for_insertion, PASS_DATA1);
     if (edit->column_highlight)
         edit->force |= REDRAW_PAGE;
+
+    return ret;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -3342,17 +3350,20 @@ edit_execute_key_command (WEdit * edit, long command, int char_for_insertion, in
    that if it is called many times, a single undo command will undo
    all of them. It also does not check for the Undo command.
  */
-void
-edit_execute_cmd (WEdit * edit, long command, int char_for_insertion, int parm, void *data)
+cb_ret_t
+edit_execute_cmd (WEdit * edit, long command, int char_for_insertion, PARM_DATA)
 {
+    cb_ret_t ret[9] = { REPEAT_4(MSG_HANDLED), REPEAT_4(MSG_HANDLED), MSG_HANDLED };
     Widget *w = WIDGET (edit);
     GSList *slang_code = NULL;
 
-    long parm_embedded = GET_EM_PARM(parm);
-    parm = GET_BASE_PARAM(parm);
+    int parm_flags = command & ~0xffff;
+    command = command & 0xffff;
 
+    mc_always_log("edit_execute_cmd: %d/%d/%d, %p\n", command, -1, -1, data);
     /* Check if the command is a S-Lang script registered command */
-    if ((slang_code = get_command_callback (command)) != NULL)
+    slang_code = get_action_hook (command);
+    if (slang_code != NULL)
     {
         int ret_api, ret_api2 = -1, ret_fun = 0;
         ret_api = SLang_execute_function (slang_code->data);
@@ -3372,18 +3383,23 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion, int parm, 
                 SLang_set_error (0);
             }
         }
-        if (ret_api <= 0 || ret_api2 <= 0 || !ret_fun)
-            return;
+        if (ret_api <= 0 || ret_api2 <= 0)
+            return ret[0];
+        if (ret_fun == 0)
+            return ret[0];
     }
     if (command == CK_WindowFullscreen)
     {
         edit_toggle_fullscreen (edit, PASS_DATA1);
-        return;
+        return ret[0];
     }
 
     /* handle window state */
     if (edit_handle_move_resize (edit, command))
-        return;
+        return ret[0];
+
+    /* No match in first set of actions. */
+    ret[0] = MSG_NOT_HANDLED;
 
     edit->force |= REDRAW_LINE;
 
@@ -3435,6 +3451,8 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion, int parm, 
 
         /* any other command */
     default:
+        /* No match in second set of actions. */
+        ret[1] = MSG_NOT_HANDLED;
         if (edit->highlight)
             edit_mark_cmd (edit, FALSE, PASS_DATA1);        /* clear */
         edit->highlight = 0;
@@ -3448,7 +3466,7 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion, int parm, 
         edit->found_len = 0;
         edit->prev_col = edit_get_col (edit);
         edit->search_start = edit->buffer.curs1;
-        return;
+        return ret[2];
     }
     /*  check for redo */
     if (command == CK_Redo)
@@ -3458,7 +3476,7 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion, int parm, 
         edit->found_len = 0;
         edit->prev_col = edit_get_col (edit);
         edit->search_start = edit->buffer.curs1;
-        return;
+        return ret[2];
     }
 
     edit->redo_stack_reset = 1;
@@ -3526,8 +3544,11 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion, int parm, 
         edit->prev_col = edit_get_col (edit);
         edit->search_start = edit->buffer.curs1;
         edit_find_bracket (edit, PASS_DATA1);
-        return;
+        return ret[2];
     }
+
+    /* No match in third set of actions. */
+    ret[2] = MSG_NOT_HANDLED;
 
     switch (command)
     {
@@ -3554,6 +3575,8 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion, int parm, 
         }
         break;
     default:
+        /* Mark no match occurred. */
+        ret[3] = MSG_NOT_HANDLED;
         break;
     }
 
@@ -3583,6 +3606,8 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion, int parm, 
         edit->force |= REDRAW_CHAR_ONLY;
         break;
     default:
+        /* Mark no match occurred. */
+        ret[4] = MSG_NOT_HANDLED;
         break;
     }
 
@@ -4038,7 +4063,7 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion, int parm, 
             char time_format[] = "_c", *tfmt;
             time_format[0] = '%';
 
-            if (has_flag_check_both(parm_embedded, MSG_DATA_PTR_GIVEN) && data != NULL)
+            if (data != NULL && data->type == Multi_Type_String)
                 tfmt = (char *) data;
             else
                 tfmt = time_format;
@@ -4090,6 +4115,8 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion, int parm, 
         w->ext_mode = TRUE;
         break;
     default:
+        /* Mark no match occurred. */
+        ret[5] = MSG_NOT_HANDLED;
         break;
     }
 
@@ -4139,6 +4166,8 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion, int parm, 
         edit->found_len = 0;
         break;
     default:
+        /* Mark no match occurred. */
+        ret[7] = MSG_NOT_HANDLED;
         edit->found_len = 0;
         edit->prev_col = edit_get_col (edit);
         edit->search_start = edit->buffer.curs1;
@@ -4159,9 +4188,13 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion, int parm, 
             edit->force |= REDRAW_PAGE;
             break;
         default:
+            /* Mark no match occurred. */
+            ret[8] = MSG_NOT_HANDLED;
             break;
         }
     }
+    /* Return if any case/if examination ended positively. */
+    return ret[0] | ret[1] | ret[2] | ret[3] | ret[4] | ret[5] | ret[7] | ret[8];
 }
 
 /* --------------------------------------------------------------------------------------------- */
