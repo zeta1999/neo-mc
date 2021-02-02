@@ -53,6 +53,9 @@ extern char *option_stop_format_chars;
 
 extern gboolean edit_confirm_save;
 
+extern char *option_other_file_1_exts;
+extern char *option_other_file_2_exts;
+
 extern gboolean visible_tabs;
 extern gboolean visible_tws;
 
@@ -66,6 +69,8 @@ extern gboolean show_right_margin;
 void edit_stack_init (void);
 void edit_stack_free (void);
 
+/* If file is open, switch to it, otherwise it is loaded */
+gboolean edit_switch_to_file (WDialog * h, const vfs_path_t * file);
 gboolean edit_file (const vfs_path_t * file_vpath, long line);
 gboolean edit_files (const GList * files);
 

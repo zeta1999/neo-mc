@@ -94,6 +94,16 @@ typedef enum
     EDIT_DO_BACKUP
 } edit_save_mode_t;
 
+
+/* Describes how well a file suits for editing. Symlinks and empty files get average grade. */
+typedef enum
+{
+    FILE_RANK_INVALID = -1,
+    FILE_RANK_NOT_SUITABLE = 0,
+    FILE_RANK_AVERAGE_SUITABLE,
+    FILE_RANK_SUITABLE
+} file_suitable_rank_t;
+
 /*** structures declarations (and typedefs of structures)*****************************************/
 
 /* search/replace options */
@@ -185,7 +195,8 @@ WEdit *edit_init (WEdit * edit, int y, int x, int lines, int cols,
                   const vfs_path_t * filename_vpath, long line);
 gboolean edit_clean (WEdit * edit);
 gboolean edit_ok_to_exit (WEdit * edit);
-gboolean edit_load_cmd (WDialog * h);
+file_suitable_rank_t edit_check_file_suitable (const vfs_path_t * fs_path);
+gboolean edit_load_cmd (WDialog * h, const void *data);
 gboolean edit_load_file_from_history (WDialog * h);
 gboolean edit_load_syntax_file (WDialog * h);
 gboolean edit_load_menu_file (WDialog * h);

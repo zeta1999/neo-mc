@@ -72,6 +72,7 @@ struct WEdit
 
     vfs_path_t *filename_vpath; /* Name of the file */
     vfs_path_t *dir_vpath;      /* NULL if filename is absolute */
+    vfs_path_t *otherfile_vpath;        /* Name of the `other` file (e.g.: header, with .h extension) */
 
     /* dynamic buffers and cursor position for editor: */
     edit_buffer_t buffer;

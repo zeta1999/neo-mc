@@ -67,6 +67,7 @@ char *vfs_path_to_str_elements_count (const vfs_path_t * path, int elements_coun
 char *vfs_path_to_str_flags (const vfs_path_t * vpath, int elements_count, vfs_path_flag_t flags);
 vfs_path_t *vfs_path_from_str (const char *path_str);
 vfs_path_t *vfs_path_from_str_flags (const char *path_str, vfs_path_flag_t flags);
+gboolean vfs_path_has_extension (const vfs_path_t *fs_path, const char **exts, gboolean ignore_case);
 vfs_path_t *vfs_path_build_filename (const char *first_element, ...);
 vfs_path_t *vfs_path_append_new (const vfs_path_t * vpath, const char *first_element, ...);
 vfs_path_t *vfs_path_append_vpath_new (const vfs_path_t * first_vpath, ...);

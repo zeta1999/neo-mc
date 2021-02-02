@@ -246,6 +246,7 @@ enum
     CK_ParagraphDown,
     /* file commands */
     CK_EditFile,
+    CK_OtherFile,
     CK_InsertFile,
     CK_EditSyntaxFile,
     CK_Close,

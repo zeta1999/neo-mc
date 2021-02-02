@@ -393,6 +393,7 @@ static const global_keymap_ini_t default_editor_keymap[] = {
     {"InsertOverwrite", "insert"},
     {"Help", "f1"},
     {"Save", "f2"},
+    {"OtherFile", "alt-a"},
     {"Mark", "f3"},
     {"Replace", "f4"},
     {"Copy", "f5"},

@@ -593,6 +593,48 @@ vfs_path_strip_home (const char *dir)
 /*** public functions ****************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 
+/**
+ * Returns TRUE if path has one of the given extensions (in a NULL terminated array).
+ * The extension strings should include the dot.
+ */
+gboolean
+vfs_path_has_extension (const vfs_path_t * fs_path, const char **exts, gboolean ignore_case)
+{
+    const char *path, **cur_ext;
+    char *upcase_path, *upcase_ext;
+    gboolean ret = TRUE;
+
+    path = vfs_path_as_str (fs_path);
+
+    /*
+     * The extensions should be only ASCII, so use g_ascii_strup() which also
+     * safely leaves non-ASCII chars unchanged.
+     */
+    upcase_path = g_ascii_strup(path, -1);
+
+    for (cur_ext = exts; cur_ext != NULL && *cur_ext != NULL; cur_ext++)
+    {
+        if (ignore_case)
+        {
+            upcase_ext = g_ascii_strup(*cur_ext, -1);
+            if (g_str_has_suffix (upcase_path, upcase_ext))
+                goto ret_true;
+            g_free(upcase_ext);
+            upcase_ext = NULL;
+        } else if (g_str_has_suffix (path, *cur_ext))
+            goto ret_true;
+    }
+
+    ret = FALSE;
+ret_true:
+    if (upcase_ext != NULL)
+        g_free(upcase_ext);
+    g_free(upcase_path);
+    return ret;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
 #define vfs_append_from_path(appendfrom, is_relative) \
 { \
     if ((flags & VPF_STRIP_HOME) && element_index == 0 && \
