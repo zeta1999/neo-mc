@@ -245,7 +245,6 @@ gboolean edit_load_macro_cmd (WEdit * edit, PARM_DATA);
 void edit_delete_macro_cmd (WEdit * edit, PARM_DATA);
 gboolean edit_repeat_macro_cmd (WEdit * edit, PARM_DATA);
 
-unsigned char *helper_use_metadata_to_read_userdata(unsigned char *dataptr, PARM_DATA);
 gboolean edit_copy_to_X_buf_cmd (WEdit * edit, long clip_id, PARM_DATA);
 gboolean edit_cut_to_X_buf_cmd (WEdit * edit, long clip_id, PARM_DATA);
 gboolean edit_paste_from_X_buf_cmd (WEdit * edit, long clip_id, PARM_DATA);

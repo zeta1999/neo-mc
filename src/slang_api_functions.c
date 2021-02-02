@@ -162,7 +162,8 @@ slang_api__action(void *ARRAY_2_VOIDP, char *action_name, long action_code, Mult
         action_code = resolved;
     }
 
-     parm = (int)action_code & ~0xffff;
+    /* TODO: rozwiązać sprawę nieprzekazywania parm do funkcji zwrotnej dialogu edytora */
+    parm = (int)action_code & ~0xffff;
 
     /*
      * Invoke the topmost message interpreting function, then WEdit's sub-callback
@@ -186,7 +187,7 @@ slang_api__action(void *ARRAY_2_VOIDP, char *action_name, long action_code, Mult
 void
 slang_api__cure_cursor_move (int offset)
 {
-    edit_cursor_move (get_cure (), offset, NO_VALUE_PARM, NULL);
+    edit_cursor_move (get_cure (), offset, -1, NULL);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -276,7 +277,7 @@ slang_api__cure_get_left_whole_word (int skip_space)
 int
 slang_api__cure_delete (void)
 {
-    return edit_delete (get_cure (), 0, NO_VALUE_PARM, NULL);
+    return edit_delete (get_cure (), 0, -1, NULL);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -289,7 +290,7 @@ slang_api__cure_delete (void)
 int
 slang_api__cure_backspace (void)
 {
-    return edit_backspace (get_cure (), 0, NO_VALUE_PARM, NULL);
+    return edit_backspace (get_cure (), 0, -1, NULL);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -301,7 +302,7 @@ slang_api__cure_backspace (void)
 void
 slang_api__cure_insert_ahead (int c)
 {
-    edit_insert_ahead (get_cure (), c, NO_VALUE_PARM, NULL);
+    edit_insert_ahead (get_cure (), c, -1, NULL);
 }
 
 /* --------------------------------------------------------------------------------------------- */

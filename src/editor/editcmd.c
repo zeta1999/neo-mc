@@ -78,6 +78,7 @@
 #include "spell_dialogs.h"
 #endif
 #include "etags.h"
+#include "src/clipboard.h"
 
 /*** global variables ****************************************************************************/
 
@@ -484,28 +485,28 @@ static gboolean
 edit_save_cmd (WEdit * edit, PARM_DATA)
 {
     int res, save_lock = 0;
-    vfs_path_t *fpath;
+    vfs_path_t *fspath;
 
     /* Is file path sent with MSG_ACTION? */
     if (data != NULL && data->type == Multi_Type_String)
     {
         /* Yes – create vfs object from it */
-        fpath = vfs_path_from_str(data->string);
+        fspath = vfs_path_from_str(data->string);
     } else
         /* No – use existing vfs object, from WEdit */
-        fpath = vfs_path_clone(edit->filename_vpath);
+        fspath = vfs_path_clone(edit->filename_vpath);
 
     if (!edit->locked && !edit->delete_file)
-        save_lock = lock_file (fpath);
-    res = edit_save_file (edit, fpath);
+        save_lock = lock_file (fspath);
+    res = edit_save_file (edit, fspath);
 
     /* Maintain modify (not save) lock on failure */
     if ((res > 0 && edit->locked) || save_lock)
-        edit->locked = unlock_file (fpath);
+        edit->locked = unlock_file (fspath);
 
     /* Release unneded vfs object */
-    if (fpath != NULL)
-        vfs_path_free(fpath);
+    if (fspath != NULL)
+        vfs_path_free(fspath);
 
     /* On failure try 'save as', it does locking on its own */
     if (res == 0)
@@ -1443,14 +1444,13 @@ edit_delete_macro (WEdit * edit, int hotkey, PARM_DATA)
      * this CK action.
      */
     if (data && data->type == Multi_Type_String)
-        skeyname = data->string;
+        skeyname = g_strdup(data->string);
     else
         skeyname = lookup_key_by_code (hotkey);
     while (mc_config_del_key (macros_config, section_name, skeyname))
         ;
 
-    /* Release if it's not an external pointer */
-    if (data != skeyname)
+    if (skeyname != NULL)
         g_free (skeyname);
 
     mc_config_save_file (macros_config, NULL);
@@ -2061,9 +2061,14 @@ edit_load_cmd (WDialog * h, PARM_DATA)
     char *exp;
     gboolean ret = TRUE;        /* possible cancel */
 
-    exp = input_expand_dialog (_("Load"), _("Enter file name:"),
+    if (data != NULL && data->type == Multi_Type_String && data->string != NULL)
+    {
+        exp = g_strdup(data->string);
+    } else {
+        exp = input_expand_dialog (_("Load"), _("Enter file name:"),
                                MC_HISTORY_EDIT_LOAD, INPUT_LAST_TEXT,
                                INPUT_COMPLETE_FILENAMES | INPUT_COMPLETE_CD);
+    }
 
     if (exp != NULL && *exp != '\0')
     {

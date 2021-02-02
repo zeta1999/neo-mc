@@ -80,6 +80,8 @@
 
         $4 = NULL;
 
+        parm_data.count = 1;
+
         /* Get any parametrizing data from qualifiers */
         if (SLang_qualifier_exists("param")) {
             long qual_long = LONG_MAX;
@@ -87,7 +89,8 @@
             if (qual_long != LONG_MAX)
             {
                 parm_data.type = Multi_Type_Long;
-                parm_data.param = qual_long;
+                parm_data.kind = Multi_Kind_Number;
+                parm_data.lparam = qual_long;
                 $4 = &parm_data;
             }
         }
@@ -98,10 +101,22 @@
             if (qual_str != NULL)
             {
                 parm_data.type = Multi_Type_String;
+                parm_data.kind = Multi_Kind_Pointer;
                 parm_data.string = qual_str;
                 $4 = &parm_data;
             }
         }
+
+        if (SLang_qualifier_exists("flag")) {
+            long qual_long = LONG_MAX;
+            SLang_get_long_qualifier("flag", &qual_long, LONG_MAX);
+            if (qual_long != LONG_MAX)
+            {
+                parm_data.flags = (unsigned int)qual_long;
+                $4 = &parm_data;
+            }
+        }
+
     }
 #end
 

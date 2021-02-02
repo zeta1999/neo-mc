@@ -500,6 +500,9 @@ edit_dialog_command_execute (WDialog * h, long command, PARM_DATA)
     Widget *wh = WIDGET (h);
     cb_ret_t ret = MSG_HANDLED;
 
+    /* Discard any embedded data (PARMF_* flags) */
+    command = command & 0xffff;
+
     switch (command)
     {
     case CK_EditNew:

@@ -284,13 +284,8 @@ edit_insert_stream (WEdit * edit, FILE * f, PARM_DATA)
 }
 /* --------------------------------------------------------------------------------------------- */
 
-/*
- * Takes on all relevant arguments and checks whether an input data to the MSG_ACTION
- * (which «could» be the source of this execution) has been given. If yes, then it is
- * considered to be a file path and it is used before edit's open file.
- */
 static vfs_path_t *
-helper_resolv_file_path(vfs_path_t *std_vpath, PARM_DATA) {
+helper_resolv_file_path_origin(vfs_path_t *std_vpath, PARM_DATA) {
     vfs_path_t *fspath = NULL;
 
     if (data != NULL && data->type == Multi_Type_String)
@@ -425,7 +420,7 @@ edit_load_file (WEdit * edit, PARM_DATA)
     gboolean fast_load = TRUE;
     vfs_path_t *fspath;
 
-    fspath = helper_resolv_file_path(edit->filename_vpath, PASS_DATA);
+    fspath = helper_resolv_file_path_origin(edit->filename_vpath, PASS_DATA);
 
     /* Cannot do fast load if a filter is used */
     if (edit_find_filter (fspath) >= 0)
@@ -504,7 +499,7 @@ edit_load_position (WEdit * edit, gboolean load_position, PARM_DATA)
     gboolean ret = TRUE;
     vfs_path_t *fspath;
 
-    fspath = helper_resolv_file_path(edit->filename_vpath, PASS_DATA);
+    fspath = helper_resolv_file_path_origin(edit->filename_vpath, PASS_DATA);
 
     if (fspath == NULL
         || *(vfs_path_get_by_index (fspath, 0)->path) == '\0')
@@ -550,7 +545,7 @@ edit_save_position (WEdit * edit, PARM_DATA)
     gboolean ret = TRUE;
     vfs_path_t *fspath;
 
-    fspath = helper_resolv_file_path(edit->filename_vpath, PASS_DATA);
+    fspath = helper_resolv_file_path_origin(edit->filename_vpath, PASS_DATA);
 
     if (fspath == NULL
         || *(vfs_path_get_by_index (fspath, 0)->path) == '\0')
@@ -679,7 +674,7 @@ edit_modification (WEdit * edit, PARM_DATA)
 {
     vfs_path_t *fspath;
 
-    fspath = helper_resolv_file_path(edit->filename_vpath, PASS_DATA);
+    fspath = helper_resolv_file_path_origin(edit->filename_vpath, PASS_DATA);
 
     edit->caches_valid = FALSE;
 
@@ -2252,7 +2247,7 @@ edit_clean (WEdit * edit, PARM_DATA)
     if (edit == NULL)
         return FALSE;
 
-    fspath = helper_resolv_file_path(edit->filename_vpath, PASS_DATA);
+    fspath = helper_resolv_file_path_origin(edit->filename_vpath, PASS_DATA);
 
     /* a stale lock, remove it */
     if (edit->locked)
@@ -2308,7 +2303,7 @@ edit_reload_line (WEdit * edit, const vfs_path_t * filename_vpath, long line, PA
     gboolean ret = TRUE;
     vfs_path_t *fspath;
 
-    fspath = helper_resolv_file_path((vfs_path_t *)filename_vpath, PASS_DATA);
+    fspath = helper_resolv_file_path_origin((vfs_path_t *)filename_vpath, PASS_DATA);
     if (!fspath)
         return FALSE;
 
@@ -3298,7 +3293,7 @@ cb_ret_t
 edit_execute_key_command (WEdit * edit, long command, int char_for_insertion, PARM_DATA)
 {
     cb_ret_t ret = MSG_HANDLED;
-    int parm_flags = (int) command & ~0xffff;
+    /* Discard any embedded data (PARMF_* flags) */
     command = command & 0xffff;
 
     if (command == CK_MacroStartRecord || command == CK_RepeatStartRecord
@@ -3336,7 +3331,7 @@ edit_execute_key_command (WEdit * edit, long command, int char_for_insertion, PA
         edit_push_key_press (edit, PASS_DATA);
 
     mc_always_log("key: %d/%d, %s\n", command, -1, "-1");
-    ret = edit_execute_cmd (edit, command, char_for_insertion, PASS_DATA1);
+    ret = edit_execute_cmd (edit, command, char_for_insertion, PASS_DATA);
     if (edit->column_highlight)
         edit->force |= REDRAW_PAGE;
 
@@ -3357,7 +3352,7 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion, PARM_DATA)
     Widget *w = WIDGET (edit);
     GSList *slang_code = NULL;
 
-    int parm_flags = command & ~0xffff;
+    /* Discard any embedded data (PARMF_* flags) */
     command = command & 0xffff;
 
     mc_always_log("edit_execute_cmd: %d/%d/%d, %p\n", command, -1, -1, data);
@@ -3390,7 +3385,7 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion, PARM_DATA)
     }
     if (command == CK_WindowFullscreen)
     {
-        edit_toggle_fullscreen (edit, PASS_DATA1);
+        edit_toggle_fullscreen (edit, PASS_DATA);
         return ret[0];
     }
 
@@ -3443,8 +3438,8 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion, PARM_DATA)
         edit->column_highlight = 0;
         if (edit->highlight == 0 || (edit->mark2 != -1 && edit->mark1 != edit->mark2))
         {
-            edit_mark_cmd (edit, TRUE, PASS_DATA1); /* clear */
-            edit_mark_cmd (edit, FALSE, PASS_DATA1);        /* marking on */
+            edit_mark_cmd (edit, TRUE, PASS_DATA); /* clear */
+            edit_mark_cmd (edit, FALSE, PASS_DATA);        /* marking on */
         }
         edit->highlight = 1;
         break;
@@ -3454,7 +3449,7 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion, PARM_DATA)
         /* No match in second set of actions. */
         ret[1] = MSG_NOT_HANDLED;
         if (edit->highlight)
-            edit_mark_cmd (edit, FALSE, PASS_DATA1);        /* clear */
+            edit_mark_cmd (edit, FALSE, PASS_DATA);        /* clear */
         edit->highlight = 0;
     }
 
@@ -3462,7 +3457,7 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion, PARM_DATA)
     if (command == CK_Undo)
     {
         edit->redo_stack_reset = 0;
-        edit_group_undo (edit, PASS_DATA1);
+        edit_group_undo (edit, PASS_DATA);
         edit->found_len = 0;
         edit->prev_col = edit_get_col (edit);
         edit->search_start = edit->buffer.curs1;
@@ -3472,7 +3467,7 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion, PARM_DATA)
     if (command == CK_Redo)
     {
         edit->redo_stack_reset = 0;
-        edit_do_redo (edit, PASS_DATA1);
+        edit_do_redo (edit, PASS_DATA);
         edit->found_len = 0;
         edit->prev_col = edit_get_col (edit);
         edit->search_start = edit->buffer.curs1;
@@ -3486,7 +3481,7 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion, PARM_DATA)
     {
         /* if non persistent selection and text selected */
         if (!option_persistent_selections && edit->mark1 != edit->mark2)
-            edit_block_delete_cmd (edit, PASS_DATA1);
+            edit_block_delete_cmd (edit, PASS_DATA);
 
         if (edit->overwrite)
         {
@@ -3496,10 +3491,10 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion, PARM_DATA)
 #endif
                 if (edit_buffer_get_current_byte (&edit->buffer) != '\n')
 
-                    edit_delete (edit, FALSE, PASS_DATA1);
+                    edit_delete (edit, FALSE, PASS_DATA);
         }
         if (option_cursor_beyond_eol && edit->over_col > 0)
-            edit_insert_over (edit, PASS_DATA1);
+            edit_insert_over (edit, PASS_DATA);
 #ifdef HAVE_CHARSET
         /**
            Encode 8-bit input as UTF-8, if display (locale) is *not* UTF-8,
@@ -3525,25 +3520,25 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion, PARM_DATA)
             while (i <= UTF8_CHAR_LEN && str[i] != '\0')
             {
                 char_for_insertion = str[i];
-                edit_insert (edit, char_for_insertion, PASS_DATA1);
+                edit_insert (edit, char_for_insertion, PASS_DATA);
                 i++;
             }
         }
         else
 #endif
-            edit_insert (edit, char_for_insertion, PASS_DATA1);
+            edit_insert (edit, char_for_insertion, PASS_DATA);
 
         if (option_auto_para_formatting)
         {
-            format_paragraph (edit, FALSE, PASS_DATA1);
+            format_paragraph (edit, FALSE, PASS_DATA);
             edit->force |= REDRAW_PAGE;
         }
         else
-            check_and_wrap_line (edit, PASS_DATA1);
+            check_and_wrap_line (edit, PASS_DATA);
         edit->found_len = 0;
         edit->prev_col = edit_get_col (edit);
         edit->search_start = edit->buffer.curs1;
-        edit_find_bracket (edit, PASS_DATA1);
+        edit_find_bracket (edit, PASS_DATA);
         return ret[2];
     }
 
@@ -3569,9 +3564,9 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion, PARM_DATA)
         if (!option_persistent_selections && edit->mark2 >= 0)
         {
             if (edit->column_highlight)
-                edit_push_undo_action (edit, COLUMN_ON, PASS_DATA1);
+                edit_push_undo_action (edit, COLUMN_ON, PASS_DATA);
             edit->column_highlight = 0;
-            edit_mark_cmd (edit, TRUE, PASS_DATA1);
+            edit_mark_cmd (edit, TRUE, PASS_DATA);
         }
         break;
     default:
@@ -3617,13 +3612,13 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion, PARM_DATA)
     case CK_BackSpace:
         /* if non persistent selection and text selected */
         if (!option_persistent_selections && edit->mark1 != edit->mark2)
-            edit_block_delete_cmd (edit, PASS_DATA1);
+            edit_block_delete_cmd (edit, PASS_DATA);
         else if (option_cursor_beyond_eol && edit->over_col > 0)
             edit->over_col--;
         else if (option_backspace_through_tabs && is_in_indent (&edit->buffer))
         {
             while (edit_buffer_get_previous_byte (&edit->buffer) != '\n' && edit->buffer.curs1 > 0)
-                edit_backspace (edit, TRUE, PASS_DATA1);
+                edit_backspace (edit, TRUE, PASS_DATA);
         }
         else if (option_fake_half_tabs && is_in_indent (&edit->buffer)
                  && right_of_four_spaces (edit))
@@ -3631,68 +3626,68 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion, PARM_DATA)
             int i;
 
             for (i = 0; i < HALF_TAB_SIZE; i++)
-                edit_backspace (edit, TRUE, PASS_DATA1);
+                edit_backspace (edit, TRUE, PASS_DATA);
         }
         else
-            edit_backspace (edit, FALSE, PASS_DATA1);
+            edit_backspace (edit, FALSE, PASS_DATA);
         break;
     case CK_Delete:
         /* if non persistent selection and text selected */
         if (!option_persistent_selections && edit->mark1 != edit->mark2)
-            edit_block_delete_cmd (edit, PASS_DATA1);
+            edit_block_delete_cmd (edit, PASS_DATA);
         else
         {
             if (option_cursor_beyond_eol && edit->over_col > 0)
-                edit_insert_over (edit, PASS_DATA1);
+                edit_insert_over (edit, PASS_DATA);
 
             if (option_fake_half_tabs && is_in_indent (&edit->buffer) && left_of_four_spaces (edit))
             {
                 int i;
 
                 for (i = 1; i <= HALF_TAB_SIZE; i++)
-                    edit_delete (edit, TRUE, PASS_DATA1);
+                    edit_delete (edit, TRUE, PASS_DATA);
             }
             else
-                edit_delete (edit, FALSE, PASS_DATA1);
+                edit_delete (edit, FALSE, PASS_DATA);
         }
         break;
     case CK_DeleteToWordBegin:
         edit->over_col = 0;
-        edit_left_delete_word (edit, PASS_DATA1);
+        edit_left_delete_word (edit, PASS_DATA);
         break;
     case CK_DeleteToWordEnd:
         if (option_cursor_beyond_eol && edit->over_col > 0)
-            edit_insert_over (edit, PASS_DATA1);
+            edit_insert_over (edit, PASS_DATA);
 
-        edit_right_delete_word (edit, PASS_DATA1);
+        edit_right_delete_word (edit, PASS_DATA);
         break;
     case CK_DeleteLine:
-        edit_delete_line (edit, PASS_DATA1);
+        edit_delete_line (edit, PASS_DATA);
         break;
     case CK_DeleteToHome:
-        edit_delete_to_line_begin (edit, PASS_DATA1);
+        edit_delete_to_line_begin (edit, PASS_DATA);
         break;
     case CK_DeleteToEnd:
-        edit_delete_to_line_end (edit, PASS_DATA1);
+        edit_delete_to_line_end (edit, PASS_DATA);
         break;
     case CK_Enter:
         edit->over_col = 0;
         if (option_auto_para_formatting)
         {
-            edit_double_newline (edit, PASS_DATA1);
+            edit_double_newline (edit, PASS_DATA);
             if (option_return_does_auto_indent && !bracketed_pasting_in_progress)
-                edit_auto_indent (edit, PASS_DATA1);
-            format_paragraph (edit, FALSE, PASS_DATA1);
+                edit_auto_indent (edit, PASS_DATA);
+            format_paragraph (edit, FALSE, PASS_DATA);
         }
         else
         {
-            edit_insert (edit, '\n', PASS_DATA1);
+            edit_insert (edit, '\n', PASS_DATA);
             if (option_return_does_auto_indent && !bracketed_pasting_in_progress)
-                edit_auto_indent (edit, PASS_DATA1);
+                edit_auto_indent (edit, PASS_DATA);
         }
         break;
     case CK_Return:
-        edit_insert (edit, '\n', PASS_DATA1);
+        edit_insert (edit, '\n', PASS_DATA);
         break;
 
     case CK_MarkColumnPageUp:
@@ -3700,14 +3695,14 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion, PARM_DATA)
         MC_FALLTHROUGH;
     case CK_PageUp:
     case CK_MarkPageUp:
-        edit_move_up (edit, w->lines - 1, TRUE, PASS_DATA1);
+        edit_move_up (edit, w->lines - 1, TRUE, PASS_DATA);
         break;
     case CK_MarkColumnPageDown:
         edit->column_highlight = 1;
         MC_FALLTHROUGH;
     case CK_PageDown:
     case CK_MarkPageDown:
-        edit_move_down (edit, w->lines - 1, TRUE, PASS_DATA1);
+        edit_move_down (edit, w->lines - 1, TRUE, PASS_DATA);
         break;
     case CK_MarkColumnLeft:
         edit->column_highlight = 1;
@@ -3723,7 +3718,7 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion, PARM_DATA)
             edit->force &= (0xFFF - REDRAW_CHAR_ONLY);
         }
         else
-            edit_left_char_move_cmd (edit, PASS_DATA1);
+            edit_left_char_move_cmd (edit, PASS_DATA);
         break;
     case CK_MarkColumnRight:
         edit->column_highlight = 1;
@@ -3736,96 +3731,96 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion, PARM_DATA)
             edit->force &= (0xFFF - REDRAW_CHAR_ONLY);
         }
         else
-            edit_right_char_move_cmd (edit, PASS_DATA1);
+            edit_right_char_move_cmd (edit, PASS_DATA);
         break;
     case CK_TopOnScreen:
     case CK_MarkToPageBegin:
-        edit_begin_page (edit, PASS_DATA1);
+        edit_begin_page (edit, PASS_DATA);
         break;
     case CK_BottomOnScreen:
     case CK_MarkToPageEnd:
-        edit_end_page (edit, PASS_DATA1);
+        edit_end_page (edit, PASS_DATA);
         break;
     case CK_WordLeft:
     case CK_MarkToWordBegin:
         edit->over_col = 0;
-        edit_left_word_move_cmd (edit, PASS_DATA1);
+        edit_left_word_move_cmd (edit, PASS_DATA);
         break;
     case CK_WordRight:
     case CK_MarkToWordEnd:
         edit->over_col = 0;
-        edit_right_word_move_cmd (edit, PASS_DATA1);
+        edit_right_word_move_cmd (edit, PASS_DATA);
         break;
     case CK_MarkColumnUp:
         edit->column_highlight = 1;
         MC_FALLTHROUGH;
     case CK_Up:
     case CK_MarkUp:
-        edit_move_up (edit, 1, FALSE, PASS_DATA1);
+        edit_move_up (edit, 1, FALSE, PASS_DATA);
         break;
     case CK_MarkColumnDown:
         edit->column_highlight = 1;
         MC_FALLTHROUGH;
     case CK_Down:
     case CK_MarkDown:
-        edit_move_down (edit, 1, FALSE, PASS_DATA1);
+        edit_move_down (edit, 1, FALSE, PASS_DATA);
         break;
     case CK_MarkColumnParagraphUp:
         edit->column_highlight = 1;
         MC_FALLTHROUGH;
     case CK_ParagraphUp:
     case CK_MarkParagraphUp:
-        edit_move_up_paragraph (edit, FALSE, PASS_DATA1);
+        edit_move_up_paragraph (edit, FALSE, PASS_DATA);
         break;
     case CK_MarkColumnParagraphDown:
         edit->column_highlight = 1;
         MC_FALLTHROUGH;
     case CK_ParagraphDown:
     case CK_MarkParagraphDown:
-        edit_move_down_paragraph (edit, FALSE, PASS_DATA1);
+        edit_move_down_paragraph (edit, FALSE, PASS_DATA);
         break;
     case CK_MarkColumnScrollUp:
         edit->column_highlight = 1;
         MC_FALLTHROUGH;
     case CK_ScrollUp:
     case CK_MarkScrollUp:
-        edit_move_up (edit, 1, TRUE, PASS_DATA1);
+        edit_move_up (edit, 1, TRUE, PASS_DATA);
         break;
     case CK_MarkColumnScrollDown:
         edit->column_highlight = 1;
         MC_FALLTHROUGH;
     case CK_ScrollDown:
     case CK_MarkScrollDown:
-        edit_move_down (edit, 1, TRUE, PASS_DATA1);
+        edit_move_down (edit, 1, TRUE, PASS_DATA);
         break;
     case CK_Home:
     case CK_MarkToHome:
-        edit_cursor_to_bol (edit, PASS_DATA1);
+        edit_cursor_to_bol (edit, PASS_DATA);
         break;
     case CK_End:
     case CK_MarkToEnd:
-        edit_cursor_to_eol (edit, PASS_DATA1);
+        edit_cursor_to_eol (edit, PASS_DATA);
         break;
     case CK_Tab:
         /* if text marked shift block */
         if (edit->mark1 != edit->mark2 && !option_persistent_selections)
         {
             if (edit->mark2 < 0)
-                edit_mark_cmd (edit, FALSE, PASS_DATA1);
-            edit_move_block_to_right (edit, PASS_DATA1);
+                edit_mark_cmd (edit, FALSE, PASS_DATA);
+            edit_move_block_to_right (edit, PASS_DATA);
         }
         else
         {
             if (option_cursor_beyond_eol)
-                edit_insert_over (edit, PASS_DATA1);
-            edit_tab_cmd (edit, PASS_DATA1);
+                edit_insert_over (edit, PASS_DATA);
+            edit_tab_cmd (edit, PASS_DATA);
             if (option_auto_para_formatting)
             {
-                format_paragraph (edit, FALSE, PASS_DATA1);
+                format_paragraph (edit, FALSE, PASS_DATA);
                 edit->force |= REDRAW_PAGE;
             }
             else
-                check_and_wrap_line (edit, PASS_DATA1);
+                check_and_wrap_line (edit, PASS_DATA);
         }
         break;
 
@@ -3837,16 +3832,16 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion, PARM_DATA)
         if (edit->mark2 >= 0)
         {
             if (edit->column_highlight)
-                edit_push_undo_action (edit, COLUMN_ON, PASS_DATA1);
+                edit_push_undo_action (edit, COLUMN_ON, PASS_DATA);
             edit->column_highlight = 0;
         }
-        edit_mark_cmd (edit, FALSE, PASS_DATA1);
+        edit_mark_cmd (edit, FALSE, PASS_DATA);
         break;
     case CK_MarkColumn:
         if (!edit->column_highlight)
-            edit_push_undo_action (edit, COLUMN_OFF, PASS_DATA1);
+            edit_push_undo_action (edit, COLUMN_OFF, PASS_DATA);
         edit->column_highlight = 1;
-        edit_mark_cmd (edit, FALSE, PASS_DATA1);
+        edit_mark_cmd (edit, FALSE, PASS_DATA);
         break;
     case CK_MarkAll:
         edit_set_markers (edit, 0, edit->buffer.size, 0, 0);
@@ -3854,21 +3849,21 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion, PARM_DATA)
         break;
     case CK_Unmark:
         if (edit->column_highlight)
-            edit_push_undo_action (edit, COLUMN_ON, PASS_DATA1);
+            edit_push_undo_action (edit, COLUMN_ON, PASS_DATA);
         edit->column_highlight = 0;
-        edit_mark_cmd (edit, TRUE, PASS_DATA1);
+        edit_mark_cmd (edit, TRUE, PASS_DATA);
         break;
     case CK_MarkWord:
         if (edit->column_highlight)
-            edit_push_undo_action (edit, COLUMN_ON, PASS_DATA1);
+            edit_push_undo_action (edit, COLUMN_ON, PASS_DATA);
         edit->column_highlight = 0;
-        edit_mark_current_word_cmd (edit, PASS_DATA1);
+        edit_mark_current_word_cmd (edit, PASS_DATA);
         break;
     case CK_MarkLine:
         if (edit->column_highlight)
-            edit_push_undo_action (edit, COLUMN_ON, PASS_DATA1);
+            edit_push_undo_action (edit, COLUMN_ON, PASS_DATA);
         edit->column_highlight = 0;
-        edit_mark_current_line_cmd (edit, PASS_DATA1);
+        edit_mark_current_line_cmd (edit, PASS_DATA);
         break;
 
     case CK_Bookmark:
@@ -3894,7 +3889,7 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion, PARM_DATA)
                 p = p->next;
                 if (p->line >= edit->start_line + w->lines || p->line < edit->start_line)
                     edit_move_display (edit, p->line - w->lines / 2, PASS_DATA);
-                edit_move_to_line (edit, p->line, PASS_DATA1);
+                edit_move_to_line (edit, p->line, PASS_DATA);
             }
         }
         break;
@@ -3911,137 +3906,137 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion, PARM_DATA)
             {
                 if (p->line >= edit->start_line + w->lines || p->line < edit->start_line)
                     edit_move_display (edit, p->line - w->lines / 2, PASS_DATA);
-                edit_move_to_line (edit, p->line, PASS_DATA1);
+                edit_move_to_line (edit, p->line, PASS_DATA);
             }
         }
         break;
 
     case CK_CenterView:
         /* Center view at cursor line. */
-        edit_center_display (edit, 0, PASS_DATA1);
+        edit_center_display (edit, 0, PASS_DATA);
         break;
 
     case CK_Top:
     case CK_MarkToFileBegin:
-        edit_move_to_top (edit, PASS_DATA1);
+        edit_move_to_top (edit, PASS_DATA);
         break;
     case CK_Bottom:
     case CK_MarkToFileEnd:
-        edit_move_to_bottom (edit, PASS_DATA1);
+        edit_move_to_bottom (edit, PASS_DATA);
         break;
 
     case CK_Copy:
         if (option_cursor_beyond_eol && edit->over_col > 0)
-            edit_insert_over (edit, PASS_DATA1);
-        edit_block_copy_cmd (edit, PASS_DATA1);
+            edit_insert_over (edit, PASS_DATA);
+        edit_block_copy_cmd (edit, PASS_DATA);
         break;
     case CK_Remove:
-        edit_block_delete_cmd (edit, PASS_DATA1);
+        edit_block_delete_cmd (edit, PASS_DATA);
         break;
     case CK_Move:
-        edit_block_move_cmd (edit, PASS_DATA1);
+        edit_block_move_cmd (edit, PASS_DATA);
         break;
 
     case CK_BlockShiftLeft:
         if (edit->mark1 != edit->mark2)
-            edit_move_block_to_left (edit, PASS_DATA1);
+            edit_move_block_to_left (edit, PASS_DATA);
         break;
     case CK_BlockShiftRight:
         if (edit->mark1 != edit->mark2)
-            edit_move_block_to_right (edit, PASS_DATA1);
+            edit_move_block_to_right (edit, PASS_DATA);
         break;
     case CK_ClipHistory:
-        edit_paste_from_clip_history (edit, mc_global.cur_clip_id, PASS_DATA1);
+        edit_paste_from_clip_history (edit, mc_global.cur_clip_id, PASS_DATA);
         break;
     case CK_Store:
         {
-            edit_copy_to_X_buf_cmd (edit, ++mc_global.cur_clip_id, PASS_DATA1);
+            edit_copy_to_X_buf_cmd (edit, ++mc_global.cur_clip_id, PASS_DATA);
         }
         break;
     case CK_Cut:
         {
-            edit_cut_to_X_buf_cmd (edit, ++mc_global.cur_clip_id, PASS_DATA1);
+            edit_cut_to_X_buf_cmd (edit, ++mc_global.cur_clip_id, PASS_DATA);
         }
         break;
     case CK_Paste:
         {
             /* if non persistent selection and text selected */
             if (!option_persistent_selections && edit->mark1 != edit->mark2)
-                edit_block_delete_cmd (edit, PASS_DATA1);
+                edit_block_delete_cmd (edit, PASS_DATA);
             if (option_cursor_beyond_eol && edit->over_col > 0)
-                edit_insert_over (edit, PASS_DATA1);
+                edit_insert_over (edit, PASS_DATA);
 
-            edit_paste_from_X_buf_cmd (edit, mc_global.cur_clip_id, PASS_DATA1);
+            edit_paste_from_X_buf_cmd (edit, mc_global.cur_clip_id, PASS_DATA);
         }
         if (!option_persistent_selections && edit->mark2 >= 0)
         {
             if (edit->column_highlight)
-                edit_push_undo_action (edit, COLUMN_ON, PASS_DATA1);
+                edit_push_undo_action (edit, COLUMN_ON, PASS_DATA);
             edit->column_highlight = 0;
-            edit_mark_cmd (edit, TRUE, PASS_DATA1);
+            edit_mark_cmd (edit, TRUE, PASS_DATA);
         }
         break;
 
     case CK_SaveAs:
-        edit_save_as_cmd (edit, PASS_DATA1);
+        edit_save_as_cmd (edit, PASS_DATA);
         break;
     case CK_Save:
-        edit_save_confirm_cmd (edit, PASS_DATA1);
+        edit_save_confirm_cmd (edit, PASS_DATA);
         break;
     case CK_BlockSave:
-        edit_save_block_cmd (edit, PASS_DATA1);
+        edit_save_block_cmd (edit, PASS_DATA);
         break;
     case CK_InsertFile:
-        edit_insert_file_cmd (edit, PASS_DATA1);
+        edit_insert_file_cmd (edit, PASS_DATA);
         break;
 
     case CK_FilePrev:
-        edit_load_back_cmd (edit, PASS_DATA1);
+        edit_load_back_cmd (edit, PASS_DATA);
         break;
     case CK_FileNext:
-        edit_load_forward_cmd (edit, PASS_DATA1);
+        edit_load_forward_cmd (edit, PASS_DATA);
         break;
 
     case CK_SyntaxChoose:
-        edit_syntax_dialog (edit, PASS_DATA1);
+        edit_syntax_dialog (edit, PASS_DATA);
         break;
 
     case CK_Search:
-        edit_search_cmd (edit, FALSE, PASS_DATA1);
+        edit_search_cmd (edit, FALSE, PASS_DATA);
         break;
     case CK_SearchContinue:
-        edit_search_cmd (edit, TRUE, PASS_DATA1);
+        edit_search_cmd (edit, TRUE, PASS_DATA);
         break;
     case CK_Replace:
-        edit_replace_cmd (edit, FALSE, PASS_DATA1);
+        edit_replace_cmd (edit, FALSE, PASS_DATA);
         break;
     case CK_ReplaceContinue:
-        edit_replace_cmd (edit, TRUE, PASS_DATA1);
+        edit_replace_cmd (edit, TRUE, PASS_DATA);
         break;
     case CK_Complete:
         /* if text marked shift block */
         if (edit->mark1 != edit->mark2 && !option_persistent_selections)
-            edit_move_block_to_left (edit, PASS_DATA1);
+            edit_move_block_to_left (edit, PASS_DATA);
         else
-            edit_complete_word_cmd (edit, PASS_DATA1);
+            edit_complete_word_cmd (edit, PASS_DATA);
         break;
     case CK_SelectFunction:
-        edit_select_object_from_tags (edit, TAG_JUMP_KIND_FUNCTION_LIST, PASS_DATA1);
+        edit_select_object_from_tags (edit, TAG_JUMP_KIND_FUNCTION_LIST, PASS_DATA);
         break;
     case CK_SelectVariable:
-        edit_select_object_from_tags (edit, TAG_JUMP_KIND_VAR_LIST, PASS_DATA1);
+        edit_select_object_from_tags (edit, TAG_JUMP_KIND_VAR_LIST, PASS_DATA);
         break;
     case CK_SelectType:
-        edit_select_object_from_tags (edit, TAG_JUMP_KIND_TYPE_LIST, PASS_DATA1);
+        edit_select_object_from_tags (edit, TAG_JUMP_KIND_TYPE_LIST, PASS_DATA);
         break;
     case CK_SelectOther:
-        edit_select_object_from_tags (edit, TAG_JUMP_KIND_OTHER_LIST, PASS_DATA1);
+        edit_select_object_from_tags (edit, TAG_JUMP_KIND_OTHER_LIST, PASS_DATA);
         break;
     case CK_SelectAllKinds:
-        edit_select_object_from_tags (edit, TAG_JUMP_KIND_ANY_LIST, PASS_DATA1);
+        edit_select_object_from_tags (edit, TAG_JUMP_KIND_ANY_LIST, PASS_DATA);
         break;
     case CK_Find:
-        edit_select_object_from_tags (edit, TAG_JUMP_KIND_MATCH_WORD, PASS_DATA1);
+        edit_select_object_from_tags (edit, TAG_JUMP_KIND_MATCH_WORD, PASS_DATA);
         break;
 
 #ifdef HAVE_ASPELL
@@ -4073,43 +4068,43 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion, PARM_DATA)
         }
         break;
     case CK_Goto:
-        edit_goto_cmd (edit, PASS_DATA1);
+        edit_goto_cmd (edit, PASS_DATA);
         break;
     case CK_ParagraphFormat:
-        format_paragraph (edit, TRUE, PASS_DATA1);
+        format_paragraph (edit, TRUE, PASS_DATA);
         edit->force |= REDRAW_PAGE;
         break;
     case CK_MacroDelete:
-        edit_delete_macro_cmd (edit, PASS_DATA1);
+        edit_delete_macro_cmd (edit, PASS_DATA);
         break;
     case CK_MatchBracket:
-        edit_goto_matching_bracket (edit, PASS_DATA1);
+        edit_goto_matching_bracket (edit, PASS_DATA);
         break;
     case CK_UserMenu:
-        user_menu (edit, NULL, -1, PASS_DATA1);
+        user_menu (edit, NULL, -1, PASS_DATA);
         break;
     case CK_Sort:
-        edit_sort_cmd (edit, PASS_DATA1);
+        edit_sort_cmd (edit, PASS_DATA);
         break;
     case CK_ExternalCommand:
-        edit_ext_cmd (edit, PASS_DATA1);
+        edit_ext_cmd (edit, PASS_DATA);
         break;
     case CK_EditMail:
-        edit_mail_dialog (edit, PASS_DATA1);
+        edit_mail_dialog (edit, PASS_DATA);
         break;
 #ifdef HAVE_CHARSET
     case CK_SelectCodepage:
-        edit_select_codepage_cmd (edit, PASS_DATA1);
+        edit_select_codepage_cmd (edit, PASS_DATA);
         break;
 #endif
     case CK_InsertLiteral:
-        edit_insert_literal_cmd (edit, PASS_DATA1);
+        edit_insert_literal_cmd (edit, PASS_DATA);
         break;
     case CK_MacroStartStopRecord:
-        edit_begin_end_macro_cmd (edit, PASS_DATA1);
+        edit_begin_end_macro_cmd (edit, PASS_DATA);
         break;
     case CK_RepeatStartStopRecord:
-        edit_begin_end_repeat_cmd (edit, PASS_DATA1);
+        edit_begin_end_repeat_cmd (edit, PASS_DATA);
         break;
     case CK_ExtendedKeyMap:
         w->ext_mode = TRUE;
@@ -4122,7 +4117,7 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion, PARM_DATA)
 
     /* CK_PipeBlock */
     if ((command / CK_PipeBlock (0)) == 1)
-        edit_block_process_cmd (edit, command - CK_PipeBlock (0), PASS_DATA1);
+        edit_block_process_cmd (edit, command - CK_PipeBlock (0), PASS_DATA);
 
     /* keys which must set the col position, and the search vars */
     switch (command)
@@ -4172,7 +4167,7 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion, PARM_DATA)
         edit->prev_col = edit_get_col (edit);
         edit->search_start = edit->buffer.curs1;
     }
-    edit_find_bracket (edit, PASS_DATA1);
+    edit_find_bracket (edit, PASS_DATA);
 
     if (option_auto_para_formatting)
     {
@@ -4184,7 +4179,7 @@ edit_execute_cmd (WEdit * edit, long command, int char_for_insertion, PARM_DATA)
         case CK_DeleteToWordEnd:
         case CK_DeleteToHome:
         case CK_DeleteToEnd:
-            format_paragraph (edit, FALSE, PASS_DATA1);
+            format_paragraph (edit, FALSE, PASS_DATA);
             edit->force |= REDRAW_PAGE;
             break;
         default:

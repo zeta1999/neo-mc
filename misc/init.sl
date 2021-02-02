@@ -43,8 +43,8 @@ define listbox_display_function() {
 define action_funct() {
     variable ret=0;
     % ret = mc->action("GrowInteger");
-    ret += 100*mc->action("Cut";param=33);
     ret += 100*mc->action("Cut";data="/home/guest/zshrc2");
+    ret += 100*mc->action("Cut";param=33);
     ret += 100*mc->action("EditFile";data="/home/guest/zshrc2");
     % mc->message("GrowInteger and 2x Up, return values:", string(ret));
     return 1;

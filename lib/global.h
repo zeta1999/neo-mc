@@ -148,17 +148,6 @@
 
 #define DEFAULT_CHARSET "ASCII"
 
-typedef enum {
-    Multi_Type_None         = 0,
-    Multi_Type_Int          = 1,
-    Multi_Type_Long         = 1<<1,
-    Multi_Type_String       = 1<<3,
-
-    Multi_Kind_Null         = 1<<7,
-    Multi_Kind_Number       = 1<<8,
-    Multi_Kind_Pointer      = 1<<9
-} Multi_Types_Kinds_t;
-
 #define has_flag(x,y) (((x) & (y)) != 0)
 #define set_flag(x,y) ((x) | (y))
 
@@ -167,10 +156,8 @@ typedef enum {
 #define DATA_NULL -1, NULL
 
 /* Compose the packed `parm` again to pass it to functions in single argument 0 */
-#define PASS_DATA1 parm_flags | command, data
 #define PASS_DATA parm, data
 #define PASS_DATAPTR parm, dataptr
-#define PASS_DATAPTR1 parm_flags, dataptr
 
 /*** enums ***************************************************************************************/
 
@@ -186,9 +173,6 @@ typedef enum
 /* special values for `parm` argument in callback functions */
 typedef enum
 {
-    /* POWER OF 2 FLAGS */
-    NO_VALUE_PARM              =  1 << 23,      /* Such value means that there is no other information */
-
     /* THE PROPER FLAGS (used when `parm` used to change behavior of callbacks, not pass a value) */
     PARMF_DONT_RUN_HOOK        =  1 << 24,      /* Only original action will be run, not S-Lang */
     PARMF_RUN_HOOK_ONLY        =  1 << 25,      /* Only S-Lang hook will be run, if any */
@@ -199,25 +183,39 @@ typedef enum
     PARMF_DATA_IS_LONG         =  1 << 29,
     PARMF_DATA_IS_MULTI_TYPE   =  1 << 30
 
-} meta_data_param_flags_t;
+} Meta_Data_Flags_t;
 
 typedef enum {
-    INT_DATA,
-    LONG_DATA,
-    STR_DATA,
-    OPAQ_DATA
-} DataStructType;
+    Multi_Type_None         = 0,
+    Multi_Type_Int          = 1,
+    Multi_Type_Long         = 1<<1,
+    Multi_Type_String       = 1<<3,
+    Multi_Type_Flags        = 1<<5,
+
+    Multi_Kind_Null         = 1<<7,
+    Multi_Kind_Number       = 1<<8,
+    Multi_Kind_Pointer      = 1<<9,
+    Multi_Kind_Other        = 1<<10
+} Multi_Types_Kinds_t;
 
 /*** structures declarations (and typedefs of structures)*****************************************/
 
 typedef struct {
     int type;
+    int kind;
+    unsigned int flags;
+    /* Multiple structs given if > 1 */
+    int count;
     union {
-        int param;
+        /* The pad is done to allow reading always lparam in case of the kind being Number */
+        struct {
+            char _pad[sizeof(long)-sizeof(int)];
+            int param;
+        };
         long lparam;
         char *string;
     };
-} Multi_Type_Action_Data;
+} __attribute__((packed)) Multi_Type_Action_Data;
 
 typedef struct
 {
