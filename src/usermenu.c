@@ -567,17 +567,17 @@ execute_menu_command (const WEdit * edit_widget, const char *commands, gboolean 
         {
             gboolean ok;
 
-            /* Prepare the terminal by setting its flag to the initial ones. This will cause \r to
-               ork as
-               * expected, instead of being ignored. */
+            /* Prepare the terminal by setting its flag to the initial ones. This will cause \r
+             * to work as expected, instead of being ignored. */
             tty_reset_shell_mode ();
 
             ok = (system (cmd) != -1);
 
-            /* Restore the SLang terminal configuration and redraw the editor. */
+            /* Restore terminal configuration. */
             tty_raw_mode ();
 
             /* Redraw the original screen's contents. */
+            tty_clear_screen ();
             repaint_screen ();
 
             if (!ok)
@@ -1048,7 +1048,7 @@ user_menu_cmd (const WEdit * edit_widget, const char *menu_file, int selected_en
             switch (*p)
             {
             case '#':
-                /* show prompt if first line of external script is #interactive */
+                /* do not show prompt if first line of external script is #silent */
                 if (selected_entry >= 0 && strncmp (p, "#silent", 7) == 0)
                     interactive = FALSE;
                 /* A commented menu entry */
