@@ -409,6 +409,11 @@ static const struct
     const char *opt_defval;
 } str_options[] = {
 #ifdef USE_INTERNAL_EDIT
+    { "editor_other_file_1_exts", &option_other_file_1_exts,
+                                   ".h,.hpp,.h++,.hh,.hp,"
+                                     ".hxx,.inl,.inc,.def" },
+    { "editor_other_file_2_exts", &option_other_file_2_exts,
+                                   ".c,.cpp,.c++,.cc,.cp,.cxx,.c+"},
     { "editor_backup_extension", &option_backup_ext, "~" },
     { "editor_filesize_threshold", &option_filesize_threshold, "64M" },
     { "editor_stop_format_chars", &option_stop_format_chars, "-+*\\,.;:&>" },

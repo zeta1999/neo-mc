@@ -68,7 +68,8 @@ supports are: block copy, move, delete, cut, paste; key for key undo;
 pull\-down menus; file insertion; macro commands; regular expression
 search and replace; shift\-arrow text highlighting (if supported by
 the terminal); insert\-overwrite toggle; autoindent; tunable tab size;
-syntax highlighting for various file types; and an option to pipe text
+syntax highlighting for various file types; switching between headers
+and sources (Alt-a by default), and an option to pipe text
 blocks through shell commands like indent and ispell.
 .PP
 Each file is opened in its own window in full\-screen mode. Window control
@@ -117,7 +118,7 @@ The macro is executed when you press the assigned key.
 .PP
 The macro commands are stored in section
 .B [editor]
-it the file
+in the file
 .BR ~/.local/share/mc/mc.macros .
 .PP
 External scripts (filters) can be assigned into the any hotkey by edit
@@ -613,6 +614,26 @@ will be untouched. Default value is
 .I editor_state_full_filename
 Show full path name in the status line. If disabled (default), only base name of the
 file is shown.
+.TP
+.I editor_other_file_1_exts
+MCEdit can quickly switch between
+.BR source " and " interface
+files – in case of the latter, being typically e.g.: the header files of
+C/C++. An example pair of such files is, e.g.:
+.BR main.c " and " main.h
+and pressing Alt-a (the default binding of the feature's action) would switch
+between them back and forth, first loading the file into the editor, if
+needed. This option allows to configure the feature by specifying a comma
+separated list of the name extensions of the files (including dots) to be
+recognized as the interface-kind files. Its default value supports C/C++
+headers
+.RB ( .h ", " .hpp ", etc.)."
+.TP
+.I editor_other_file_2_exts
+This option allows to configure the other-file feature (called also: alternate
+file) by specifying the file name extensions for the source-kind files. Its
+default value supports typical sources written in C/C++ languages
+.RB ( .c ", " .cpp ", " .cxx ", etc.)."
 .SH MISCELLANEOUS
 The editor also displays non\-us characters (160+).  When editing
 binary files, you should set

@@ -94,6 +94,9 @@ gboolean option_cursor_after_inserted_block = FALSE;
 gboolean option_state_full_filename = FALSE;
 gboolean option_completion_collect_other_files = TRUE;
 
+char *option_other_file_1_exts;
+char *option_other_file_2_exts;
+
 gboolean enable_show_tabs_tws = TRUE;
 gboolean option_check_nl_at_eof = FALSE;
 gboolean option_group_undo = FALSE;
@@ -278,6 +281,31 @@ edit_insert_stream (WEdit * edit, FILE * f)
         i++;
     }
     return i;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+/**
+ * Gives a 3-level evaluation of how well given file is looking as a suitable input to the editor.
+ */
+file_suitable_rank_t
+edit_check_file_suitable (const vfs_path_t * fs_path)
+{
+    struct stat lst, st;
+
+    if (fs_path == NULL)
+        return FILE_RANK_INVALID;
+
+    if (exist_file (vfs_path_as_str (fs_path)))
+    {
+        if (mc_lstat (fs_path, &lst) == 0 && mc_stat (fs_path, &st) == 0)
+        {
+            if (st.st_size != 0 && S_ISREG (st.st_mode) && !S_ISLNK (lst.st_mode))
+                return FILE_RANK_SUITABLE;
+            else
+                return FILE_RANK_AVERAGE_SUITABLE;
+        }
+    }
+    return FILE_RANK_NOT_SUITABLE;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -2111,6 +2139,7 @@ edit_init (WEdit * edit, int y, int x, int lines, int cols, const vfs_path_t * f
         w->options |= WOP_SELECTABLE | WOP_TOP_SELECT | WOP_WANT_CURSOR;
         w->keymap = editor_map;
         w->ext_keymap = editor_x_map;
+        edit->otherfile_vpath = NULL;
         edit->fullscreen = TRUE;
         edit_save_size (edit);
     }
@@ -2207,6 +2236,7 @@ edit_clean (WEdit * edit)
     g_free (edit->redo_stack);
     vfs_path_free (edit->filename_vpath);
     vfs_path_free (edit->dir_vpath);
+    vfs_path_free (edit->otherfile_vpath);
     mc_search_free (edit->search);
     g_free (edit->last_search_string);
 

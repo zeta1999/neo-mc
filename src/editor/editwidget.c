@@ -90,6 +90,146 @@ static cb_ret_t edit_dialog_callback (Widget * w, Widget * sender, widget_msg_t 
                                       void *data);
 
 /* --------------------------------------------------------------------------------------------- */
+
+static char *
+replace_suffix_with (const char *src_str, const char *old_suffix, const char *new_suffix)
+{
+    char *new_str, *sufx_ptr;
+    new_str = g_strndup (src_str, strlen (src_str) + strlen (new_suffix));
+    sufx_ptr = g_strrstr (new_str, old_suffix);
+    if (sufx_ptr != NULL)
+    {
+        g_stpcpy (sufx_ptr, new_suffix);
+        return new_str;
+    }
+    else
+    {
+        g_free (new_str);
+        return NULL;
+    }
+}
+
+/* --------------------------------------------------------------------------------------------- */
+/**
+ * Fills otherfile_vpath field with a detected and verified alternate (also called `other`)
+ * file path. In short, the other file is a header main.h when editing main.c and vice versa.
+ */
+static gboolean
+edit_compute_other_file_vfs_path (WEdit * edit)
+{
+    /* Default values, inspired by output of: ctags --list-map-extensions */
+    char **headers;
+    char **sources;
+    char **exts[2] = {0};
+    vfs_path_t *fs_path, *avg_path;
+    int idx, oth_type = -1, ext_index;
+    file_suitable_rank_t existing_rank;
+    gboolean ret = FALSE;
+
+    headers = g_strsplit(option_other_file_1_exts, ",", 0);
+    sources = g_strsplit(option_other_file_2_exts, ",", 0);
+
+    if ((headers == NULL || headers[0] == NULL) && (sources == NULL ||
+        sources[0] == NULL))
+        goto other_ret;
+
+    exts[0] = headers;
+    exts[1] = sources;
+
+    /* Try the already computed one if it exists in otherfile_vpath field */
+    fs_path = edit->otherfile_vpath;
+    avg_path = fs_path;
+    edit->otherfile_vpath = NULL;
+
+    /* Is it only an average match or no match? If yes, try to find a better one */
+    existing_rank = edit_check_file_suitable (fs_path);
+    if (existing_rank <= FILE_RANK_AVERAGE_SUITABLE && edit->filename_vpath != NULL)
+    {
+        for (idx = 0; idx <= 1; idx++)
+        {
+            if (vfs_path_has_extension (edit->filename_vpath, (const char **) exts[idx], TRUE))
+            {
+                oth_type = 1 - idx;
+                break;
+            }
+        }
+        if (oth_type >= 0)
+            fs_path = edit->filename_vpath;
+    }
+    /* No extension matched, or using the previously, highly suited file */
+    if (oth_type == -1)
+    {
+        edit->otherfile_vpath = avg_path;
+        ret = (existing_rank >= FILE_RANK_AVERAGE_SUITABLE);
+        goto other_ret;
+    }
+
+    for (ext_index = 0; exts[oth_type][ext_index] != NULL; ext_index++)
+    {
+        char *try_path;
+        vfs_path_t *cand_fs_path = NULL;
+        file_suitable_rank_t rank;
+
+        try_path = replace_suffix_with (vfs_path_as_str (fs_path), ".", exts[oth_type][ext_index]);
+
+        if (try_path == NULL)
+            continue;
+
+        cand_fs_path = vfs_path_from_str (try_path);
+        g_free (try_path);
+
+        if (cand_fs_path == NULL)
+            continue;
+
+        rank = edit_check_file_suitable (cand_fs_path);
+        if (rank < FILE_RANK_AVERAGE_SUITABLE)
+        {
+            vfs_path_free (cand_fs_path);
+            cand_fs_path = NULL;
+            continue;
+        }
+        else if (rank == FILE_RANK_AVERAGE_SUITABLE)
+        {
+            if (existing_rank < rank)
+            {
+                existing_rank = rank;
+                if (avg_path != NULL)
+                    vfs_path_free (avg_path);
+                avg_path = cand_fs_path;
+                cand_fs_path = NULL;
+            }
+            else
+            {
+                vfs_path_free (cand_fs_path);
+                cand_fs_path = NULL;
+            }
+        }
+        else if (rank >= FILE_RANK_SUITABLE)
+        {
+            if (avg_path != NULL)
+                vfs_path_free (avg_path);
+            edit->otherfile_vpath = cand_fs_path;
+            ret = TRUE;
+            goto other_ret;
+        }
+    }
+
+    /* Any side-saved average candidate? */
+    if (avg_path != NULL)
+    {
+        edit->otherfile_vpath = avg_path;
+        ret = (existing_rank >= FILE_RANK_AVERAGE_SUITABLE);
+    }
+
+other_ret:
+    if (sources != NULL)
+        g_strfreev(sources);
+    if (headers != NULL)
+        g_strfreev(headers);
+    return ret;
+}
+
+/* --------------------------------------------------------------------------------------------- */
 /**
  * Init the 'edit' subsystem
  */
@@ -509,7 +649,22 @@ edit_dialog_command_execute (WDialog * h, long command)
         edit_add_window (h, wh->y + 1, wh->x, wh->lines - 2, wh->cols, NULL, 0);
         break;
     case CK_EditFile:
-        edit_load_cmd (h);
+        edit_load_cmd (h, NULL);
+        break;
+    case CK_OtherFile:
+        {
+            WEdit *e = (WEdit *) g->current->data;
+            gboolean retflag = FALSE;
+
+            if (e != NULL && edit_widget_is_editor (CONST_WIDGET (e)))
+            {
+                retflag = edit_compute_other_file_vfs_path (e);
+                if (retflag)
+                    retflag = edit_switch_to_file (h, e->otherfile_vpath);
+            }
+            if (!retflag)
+                ret = MSG_NOT_HANDLED;
+        }
         break;
     case CK_History:
         edit_load_file_from_history (h);
@@ -1302,6 +1457,35 @@ edit_mouse_callback (Widget * w, mouse_msg_t msg, mouse_event_t * event)
 /* --------------------------------------------------------------------------------------------- */
 /*** public functions ****************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
+
+gboolean
+edit_switch_to_file (WDialog * h, const vfs_path_t * file)
+{
+    const WGroup *g = CONST_GROUP (h);
+    GList *el;
+    gboolean ret = FALSE;
+
+    for (el = g->widgets; el != NULL; el = g_list_next (el))
+    {
+        if (edit_widget_is_editor (CONST_WIDGET (el->data)))
+        {
+            WEdit *e = (WEdit *) el->data;
+            if (g_strcmp0 (edit_get_file_name (e), vfs_path_as_str (file)) == 0)
+            {
+                widget_select (WIDGET (e));
+                ret = TRUE;
+                break;
+            }
+        }
+    }
+    /* File not loaded? -> If it is so, then open it. */
+    if (!ret)
+        ret = edit_load_cmd (h, vfs_path_as_str (file));
+    return ret;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
 /**
  * Edit one file.
  *

@@ -286,6 +286,7 @@ static name_keymap_t command_names_start[] = {
     ADD_KEYMAP_NAME (ParagraphUp),
     ADD_KEYMAP_NAME (ParagraphDown),
     ADD_KEYMAP_NAME (EditFile),
+    ADD_KEYMAP_NAME (OtherFile),
     ADD_KEYMAP_NAME (MarkWord),
     ADD_KEYMAP_NAME (MarkLine),
     ADD_KEYMAP_NAME (MarkAll),

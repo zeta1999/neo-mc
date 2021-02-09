@@ -2107,12 +2107,15 @@ edit_save_confirm_cmd (WEdit * edit)
   */
 
 gboolean
-edit_load_cmd (WDialog * h)
+edit_load_cmd (WDialog * h, const void *data)
 {
     char *exp;
     gboolean ret = TRUE;        /* possible cancel */
 
-    exp = input_expand_dialog (_("Load"), _("Enter file name:"),
+    if (data != NULL)
+        exp = g_strdup((char *) data);
+    else
+        exp = input_expand_dialog (_("Load"), _("Enter file name:"),
                                MC_HISTORY_EDIT_LOAD, INPUT_LAST_TEXT,
                                INPUT_COMPLETE_FILENAMES | INPUT_COMPLETE_CD);
 
