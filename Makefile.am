@@ -25,8 +25,53 @@ CONFIG_STATUS_DEPENDENCIES = $(top_srcdir)/version.h
         cppcheck-portability \
         cppcheck-style \
         cppcheck-warning \
-        cppcheck-all
+        cppcheck-all \
+        tags \
+        tags-emacs \
+        tags-vim
 
+# Invoke a ctags utility to generate Emacs and Vim's format tag file.
+# The meaning of the flags:
+# - `p` kind enables function prototypes,
+# - `x` kind enables extern and forward variable declarations,
+# - `S` field enables function signatures,
+# - `properties` field enables static, volatile, etc. properties,
+# - `macrodef` field enables macro definitions.
+#
+# Generate two formats at once: Emacs and Vim's.
+tags: tags-emacs tags-vim
+
+# Build only the Emacs-style `TAGS` file.
+tags-emacs:
+	@if type ctags >/dev/null 2>&1; then \
+		if ctags --version | grep >/dev/null 2>&1 "Universal Ctags"; then \
+			ctags -e -R --languages=C --langmap=C:.h.c --c-kinds=+px \
+			    --fields=+S --fields-c=+"{properties}" --fields-c=+"{macrodef}"; \
+		else \
+			ctags -e -R --languages=C --langmap=C:.h.c --c-kinds=+px \
+			    --fields=+S; \
+		fi; \
+		printf "Created the Emacs \`TAGS\` file.\\n"; \
+	else \
+	    printf 'Error: Please install a Ctags (e.g.: either the Exuberant or Universal %b' \
+	    'version) utility first.\n'; \
+	fi
+
+# Build only the Vim-style `tags` file.
+tags-vim:
+	@if type ctags >/dev/null 2>&1; then \
+		if ctags --version | grep >/dev/null 2>&1 "Universal Ctags"; then \
+			ctags -R --languages=C --langmap=C:.h.c --c-kinds=+px \
+			    --fields=+S --fields-c=+"{properties}" --fields-c=+"{macrodef}"; \
+		else \
+			ctags -R --languages=C --langmap=C:.h.c --c-kinds=+px \
+			    --fields=+S; \
+		fi; \
+		printf "Created the Vim's style \`tags\` file.\\n"; \
+	else \
+	    printf 'Error: Please install a Ctags (e.g.: either the Exuberant or Universal %b' \
+	    'version) utility first.\n'; \
+	fi
 
 update-version:
 	@if test -x $(top_srcdir)/maint/utils/version.sh; then \
